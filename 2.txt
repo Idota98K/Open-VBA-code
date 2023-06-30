@@ -1,0 +1,473 @@
+Option Explicit
+Public FileReN As String
+Public RecipeN As String
+Public Filename As String 'レシピパラメータ更新マクロ
+Public FileN As String '↑ファイル名だけ
+Public FileRL As String 'Recipe Load
+Public FileRe As String 'Result(レシピ出力先)
+Public MainM As String 'メインマクロ
+Public Mapccs As String 'MAPマクロCCS
+Public Mapdice As String 'MAPマクロDICE
+Public MapccsN As String
+Public MapdiceN As String
+Public Param(10, 15, 15, 100, 1)
+
+
+Sub Returnrecipe()
+'    Dim Hcir(100, 100)
+    Dim Hres As Long 'Height result
+    Dim Passn(100) As String  'Pass name
+    Dim hyouzi
+'    Dim Zonen(100) As String 'Zonename
+    Dim i As Long, j As Long, k As Long, Passname As Long
+    Dim l As Long, m As Long, n As Long
+    Dim Passc As String 'Pass Count
+    Dim Passnc As Long 'Pass Name Column
+    Dim tExcel As Object
+    Dim tObj As Object
+    
+    Dim sheets1 As Object
+    Dim sheets2 As Object
+    Dim Flag1 As Long
+    Dim Flag2 As Long
+    Dim Miname As String 'Master inspecter name
+    Dim Insn As String 'Inspecter name
+    Dim MapFlag
+    Dim Rownum As Long
+    Dim Colnum As Long
+    Dim ColnumM As Long
+    Dim RownumM As Long
+    Dim Rety 'Release type
+    Dim ppMapD1 As Object
+    Dim ppMapD2 As Object
+    Dim ppMapC1 As Object
+    Dim ppMapC2 As Object
+    Dim LynxFlag As Long
+    MainM = ActiveWorkbook.Name
+    Filename = Worksheets("Sheet1").Cells(4, 5).Value
+    FileRL = Worksheets("Sheet1").Cells(2, 5).Value
+    FileRe = Worksheets("Sheet1").Cells(3, 5).Value
+    Insn = Worksheets("Sheet1").Cells(5, 2).Value
+    Miname = Worksheets("Sheet1").Cells(6, 2).Value
+    Rety = Worksheets("Sheet1").Cells(2, 2).Value
+    Mapccs = Worksheets("Sheet1").Cells(9, 5).Value
+    Mapdice = Worksheets("Sheet1").Cells(10, 5).Value
+    
+    If Worksheets("Sheet1").Cells(3, 2).Value = "DIC-AVI" Then
+        MapFlag = True
+    Else
+        MapFlag = False
+    End If
+    
+    'Filenameのファイル名のみ取得------------------------------------------
+    Flag1 = UBound(Split(Filename, "\")) 'フルパスで\が出てくる回数（最後に出現した数がほしい）
+
+    Flag2 = 0
+    
+    For i = 1 To 400
+        If Mid(Filename, i, 1) = "\" Then
+            
+            Flag2 = Flag2 + 1 'フルパスのフォルダ間区切り\の出現回数カウント
+            
+            If Flag2 = Flag1 Then  '\の出現回数が最後になった時
+            
+                FileN = Mid(Filename, i + 1)
+                Exit For
+                
+            End If
+            
+        End If
+        
+    Next
+    '--------------------------------------------------------------------------
+    
+    
+    
+    'レシピ更新マクロへの書き込みとマクロ実行----------------------------------
+    Workbooks.Open Filename
+    Workbooks(FileN).Activate
+
+    Set sheets1 = Workbooks(FileN).Worksheets("TOP")
+
+    sheets1.Cells(2, 3).Value = FileRL
+    sheets1.Cells(6, 3).Value = FileRe
+    sheets1.Cells(4, 3).Value = Insn
+    'MsgBox FileRL
+
+    Application.Run "'" & Filename & "'!Module8.UpdateStart"
+    Application.Run "'" & Filename & "'!Module14.Save_Parameter"
+    Workbooks(FileN).Save
+    Workbooks(FileN).Close
+    '--------------------------------------------------------------------------
+    
+    
+    
+    'FileReのファイル名のみ取得------------------------------------------------
+    
+    Flag1 = UBound(Split(FileRe, "\")) 'フルパスで\が出てくる回数（最後に出現した数がほしい）
+
+    Flag2 = 0
+    
+    For i = 1 To 400
+        If Mid(FileRe, i, 1) = "\" Then
+            
+            Flag2 = Flag2 + 1 'フルパスのフォルダ間区切り\の出現回数カウント
+            
+            If Flag2 = Flag1 Then  '\の出現回数が最後になった時
+            
+                FileReN = Mid(FileRe, i + 1)
+                Exit For
+                
+            End If
+            
+        End If
+        
+    Next
+    '-------------------------------------------------------------------------------
+    
+    
+    
+    'FileRLからレシピ名を取得-------------------------------------------------------
+    Flag1 = UBound(Split(Filename, "\")) 'フルパスで\が出てくる回数（最後に出現した数がほしい）
+
+    Flag2 = 0
+    
+    For i = 1 To 400
+        If Mid(FileRL, i, 1) = "\" Then
+            
+            Flag2 = Flag2 + 1 'フルパスのフォルダ間区切り\の出現回数カウント
+            
+            If Flag2 = Flag1 Then  '\の出現回数が最後になった時
+            
+                RecipeN = Mid(FileRL, i + 1)
+                Exit For
+                
+            End If
+            
+        End If
+        
+    Next
+    '--------------------------------------------------------------------------------
+    
+    
+    '汎用化or新規対象レシピ検索------------------------------------------------------
+    Rownum = 0
+    Colnum = 0
+    Workbooks.Open FileRe
+    Workbooks(FileReN).Activate
+    
+    Set sheets2 = Workbooks(FileReN).Worksheets("一覧")
+    sheets2.Select
+    
+    For i = 7 To 32 '列特定
+        If sheets2.Cells(3, i).Value = Insn Then
+            Rownum = i
+        End If
+    Next
+    
+    For i = 4 To 1000 '行特定、レシピの数1000近くなったらここ増やす
+        If sheets2.Cells(i, 5).Value = RecipeN Then
+            Colnum = i
+            Exit For
+        End If
+    Next
+    
+    sheets2.Cells(Colnum, Rownum).Select
+    
+    Selection.hyperlinks(1).Follow NewWindow:=True
+    
+    '-----------------------------------------------------------------------------------
+    
+    
+    
+    '汎用化のマスター(Master特定のアルゴ考え中)--------------------------------------------
+'    If Rety = "汎用化" Then
+'        RownumM = 0
+'        ColnumM = 0
+'
+'        For i = 7 To 32 '列特定
+'            If sheets2.Cells(3, i).Value = Miname Then
+'                RownumM = i
+'            End If
+'        Next
+'
+'        For i = 4 To 1000 '行特定、レシピの数1000近くなったらここ増やす
+'            If sheets2.Cells(i, 5).Value = Insn Then
+'                ColnumM = i
+'            End If
+'        Next
+'
+'    End If
+    '----------------------------------------------------------------------------------------
+    
+    Call a
+    ThisWorkbook.Activate
+    
+    If Worksheets("Sheet1").Cells(10, 2).Value = "ABC" Then
+        For i = 1 To 10
+            LynxFlag = 0
+            
+            For j = 1 To 15
+                
+                For k = 1 To 15
+                
+                    If InStr(Param(i, j, k, 0, 0), "Lynx Pixel") > 0 Then
+                        LynxFlag = LynxFlag + 1
+                    End If
+                        
+                    For l = 1 To 100
+                    
+                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("VChipping")) > 0 Or InStr(UCase(Param(i, j, 0, 0, 0)), UCase("TATE")) > 0 Then '　Zone名のチッピング特定
+                            
+                            If InStr(Param(i, j, k, l, 0), "Low_Delta") > 0 Then
+                                MsgBox "chip"
+                                Worksheets("Sheet1").Cells(34, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "DarkDiameter") > 0 Then
+                                Worksheets("Sheet1").Cells(35, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "DarkLength") > 0 Then
+                                Worksheets("Sheet1").Cells(36, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("pad")) > 0 Then '　Zone名のPAD特定
+                            
+                            If InStr(Param(i, j, k, l, 0), "Low_Delta") > 0 Then
+                                MsgBox "pad"
+                                Worksheets("Sheet1").Cells(38, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "DarkDiameter") > 0 Then
+                                Worksheets("Sheet1").Cells(39, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "DarkLength") > 0 Then
+                                Worksheets("Sheet1").Cells(40, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("crack")) > 0 Then '　Zone名のcrack特定
+                           
+                            If InStr(Param(i, j, k, l, 0), "UniformHighThr") > 0 Then
+                                MsgBox "crack"
+                                Worksheets("Sheet1").Cells(34, 39).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "BrightDiameter") > 0 Then
+                                Worksheets("Sheet1").Cells(35, 39).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "BrightLength") > 0 Then
+                                Worksheets("Sheet1").Cells(36, 39).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                        If LynxFlag = 2 Then 'R-Stain
+                            
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_SeedThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(51, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_BodyThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(52, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(53, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(54, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(55, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(56, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        Else '画素
+                        
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_SeedThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(35, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_BodyThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(36, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_LengthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(37, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_LengthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(38, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_WidthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(39, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_WidthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(40, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_SeedThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(41, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_BodyThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(42, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(43, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(44, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(45, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(46, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                    Next
+                    
+                Next
+                
+            Next
+      
+        Next
+        
+    Else
+        For i = 1 To 10
+        
+            LynxFlag = 0
+            
+            For j = 1 To 15
+                
+                For k = 1 To 15
+                
+                    If InStr(Param(i, j, k, 0, 0), "Lynx Pixel") > 0 Then
+                        LynxFlag = LynxFlag + 1
+                    End If
+                        
+                    For l = 1 To 100
+                        
+                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("VChipping")) > 0 Or InStr(UCase(Param(i, j, 0, 0, 0)), UCase("TATE")) > 0 Then '　Zone名のチッピング特定
+                            
+                            If InStr(Param(i, j, k, l, 0), "DetectGL") > 0 Then
+                                Worksheets("Sheet1").Cells(5, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Diameter") > 0 Then
+                                Worksheets("Sheet1").Cells(6, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Length") > 0 Then
+                                Worksheets("Sheet1").Cells(7, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("pad")) > 0 Then '　Zone名のPAD特定
+                        
+                            If InStr(Param(i, j, k, l, 0), "PadLowThreshold") > 0 Then
+                                Worksheets("Sheet1").Cells(9, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "MaxProbeArea") > 0 Then
+                                Worksheets("Sheet1").Cells(10, 34).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("crack")) > 0 Then '　Zone名のcrack特定
+                        
+                            If InStr(Param(i, j, k, l, 0), "UniformHighThr") > 0 Then
+                                Worksheets("Sheet1").Cells(5, 39).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "BrightDiameter") > 0 Then
+                                Worksheets("Sheet1").Cells(6, 39).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "BrightLength") > 0 Then
+                                Worksheets("Sheet1").Cells(7, 39).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                        If LynxFlag = 2 Then 'R-Stain
+                            For m = 22 To 27
+                                If InStr(Param(i, j, k, l, 0), "Spot_Dark_SeedThresh") > 0 Then
+                                    Worksheets("Sheet1").Cells(22, 29).Value = Param(i, j, k, l, 1)
+                                End If
+                                
+                                If InStr(Param(i, j, k, l, 0), "Spot_Dark_BodyThresh") > 0 Then
+                                    Worksheets("Sheet1").Cells(23, 29).Value = Param(i, j, k, l, 1)
+                                End If
+                                
+                                If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthLow") > 0 Then
+                                    Worksheets("Sheet1").Cells(24, 29).Value = Param(i, j, k, l, 1)
+                                End If
+                                
+                                If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthHigh") > 0 Then
+                                    Worksheets("Sheet1").Cells(25, 29).Value = Param(i, j, k, l, 1)
+                                End If
+                                
+                                If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthLow") > 0 Then
+                                    Worksheets("Sheet1").Cells(26, 29).Value = Param(i, j, k, l, 1)
+                                End If
+                                
+                                If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthHigh") > 0 Then
+                                    Worksheets("Sheet1").Cells(27, 29).Value = Param(i, j, k, l, 1)
+                                End If
+                            Next
+                        Else '画素
+                        
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_SeedThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(6, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_BodyThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(7, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_LengthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(8, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_LengthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(9, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_WidthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(10, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Bright_WidthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(11, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_SeedThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(12, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_BodyThresh") > 0 Then
+                                Worksheets("Sheet1").Cells(13, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(14, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_LengthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(15, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthLow") > 0 Then
+                                Worksheets("Sheet1").Cells(16, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            If InStr(Param(i, j, k, l, 0), "Spot_Dark_WidthHigh") > 0 Then
+                                Worksheets("Sheet1").Cells(17, 29).Value = Param(i, j, k, l, 1)
+                            End If
+                            
+                        End If
+                        
+                    Next
+                    
+                Next
+                
+            Next
+            
+        Next
+    End If
+    
+    Workbooks(FileReN).Save
+    Workbooks(FileReN).Close
+    
+End Sub

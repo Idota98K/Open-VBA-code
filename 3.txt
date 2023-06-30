@@ -1,0 +1,118 @@
+Option Explicit
+
+Sub a()
+    Dim sheetN As String
+    
+    Dim Hres As Long 'Height result
+    'Dim Passn(100) As String  'Pass name
+    Dim hyouzi
+    'Dim Zonen(100) As String 'Zonename
+    Dim i As Long, j As Long, k As Long, Passname As Long
+    Dim l As Long, m As Long, n As Long
+    Dim Passc As String 'Pass Count
+    Dim Passnc As Long 'Pass Name Column
+    Dim Filename As String 'レシピパラメータ更新マクロ
+    Dim FileN As String '↑ファイル名だけ
+    Dim FileRL As String 'Recipe Load
+    Dim FileRe As String 'Result(レシピ出力先)
+    Dim MainM As String 'メインマクロ
+    Dim sheets3 As Object
+    Dim Miname As String 'Master inspecter name
+    Dim Insn As String 'Inspecter name
+    Dim RecipeN As String
+    Dim Rownum As Long
+    Dim Colnum As Long
+    Dim ColnumM As Long
+    Dim RownumM As Long
+    
+    Passnc = 27
+    sheetN = ActiveSheet.Name
+    Set sheets3 = Workbooks(FileReN).Worksheets(sheetN)
+    
+    'パラメータ格納---------------------------------------------------------------------------
+    '5次元の配列になっていて複雑なので、触るときはBUをとって触ってください。
+    '
+    '例:)Param(1)(0)(0)(0)(0) =CRACK-3.5x, Param(2)(1)(1)(1)(1) = -1.0
+    '
+
+    For Passname = 1 To 10
+        
+        If TypeName(sheets3.Cells(Passnc + 1, 2).Value) = "Empty" Then
+            Exit For
+        Else
+        
+            Param(Passname, 0, 0, 0, 0) = sheets3.Cells(Passnc + 1, 2).Value
+           
+            k = 1
+            
+            For j = 2 To 100 Step 2
+            
+                If sheets3.Cells(Passnc + 2, j).Value = "ZoneName" Then
+                
+                    'Zonen(k) = sheets3.Cells(Passnc + 2, j + 1).Value
+                    Param(Passname, k, 0, 0, 0) = sheets3.Cells(Passnc + 1, 2).Value & "," & sheets3.Cells(Passnc + 2, j + 1).Value
+                    
+                End If
+                
+                
+                If TypeName(sheets3.Cells(Passnc + 2, j).Value) = "Empty" Then
+            
+                    Exit For
+                    
+                End If
+                
+                l = 0
+                m = 1
+                For i = Passnc + 3 To Passnc + 300
+                    
+                    If sheets3.Cells(i, j).Value = "AlgorithmName" Then
+                
+                        'Argoname(l) = sheets3.Cells(Passnc + 2, j + 1).Value
+                        l = l + 1
+                        Param(Passname, k, l, 0, 0) = sheets3.Cells(Passnc + 1, 2).Value & "," & _
+                        sheets3.Cells(Passnc + 2, j + 1).Value & "," & sheets3.Cells(i, j + 1).Value
+                        
+                        n = i
+                        m = 1
+                        
+                    End If
+                    
+                    If TypeName(sheets3.Cells(i + 1, j).Value) = "Empty" Then
+                    
+                        If Hres < i Then
+                            Hres = i
+                            
+                        End If
+                        
+                        k = k + 1 '
+                        Exit For
+                        
+                    Else
+                    
+                        Param(Passname, k, l, m, 0) = sheets3.Cells(Passnc + 1, 2).Value & "," & _
+                        sheets3.Cells(Passnc + 2, j + 1).Value & "," & sheets3.Cells(n, j + 1).Value & _
+                        "," & sheets3.Cells(i + 1, j).Value
+                        'MsgBox m & "," & Param(Passname + 1, k, l, m, 0)
+                        
+                        Param(Passname, k, l, m, 1) = sheets3.Cells(i + 1, j + 1).Value
+                        
+                        m = m + 1
+                        
+                    End If
+                    
+                Next
+                
+            Next
+        End If
+        
+        Passnc = Hres + 1
+        
+    Next
+    '---------------------------------------------------------------------------
+    
+'    For Each hyouzi In Param
+'       MsgBox hyouzi
+'    Next
+    
+
+End Sub
