@@ -739,6 +739,244 @@ Sub 試作()
     'MAP----------------------------------------------------------------------------------------
     Call cellcopy
     '-------------------------------------------------------------------------------------------
+    'para---------------------------------------------------------------------------------------
+    Call Returnrecipe
+    '-------------------------------------------------------------------------------------------
+
+
+    'レシピ設定内容1--------------------------------------------------------------------------
+    
+    Set ppSld = ppPrs.Slides(3)
+    
+    '1回前のマクロ実行で残った図形の消去-----------------------------------------------　'わざわざ2個書いてる理由:For Each1つの循環に画素とStain2つとも入れると、iが更新された際ppSld.Shapesの数が変更されエラーが起きるから
+
+    Set zukei2 = Nothing
+    For Each zukei2 In ppSld.Shapes
+
+        If zukei2.Name = "画素" Then
+        
+            zukei2.Delete
+            Exit For
+            
+        End If
+        
+    Next
+    
+    '------------------------------------------------------------------------------------
+    
+    '1回前のマクロ実行で残った図形の消去-----------------------------------------------
+    
+    Set zukei2 = Nothing
+    For Each zukei2 In ppSld.Shapes
+    
+        If zukei2.Name = "stain" Then
+        
+            zukei2.Delete
+            Exit For
+            
+        End If
+        
+    Next
+    
+    '------------------------------------------------------------------------------------
+    
+    For Each ppMapC In ppSld.Shapes
+                
+        If ppMapC.Name = "位置1" Then
+            'MsgBox ppSld.Shapes("位置1").Top & "," & ppSld.Shapes("位置1").Left
+            markc(0, 0) = ppSld.Shapes("位置1").Left
+            markc(0, 1) = ppSld.Shapes("位置1").Top
+           
+        End If
+
+        If ppMapC.Name = "位置2" Then
+            'MsgBox ppSld.Shapes("位置2").Top & "," & ppSld.Shapes("位置2").Left
+            markc(1, 0) = ppSld.Shapes("位置2").Left
+            markc(1, 1) = ppSld.Shapes("位置2").Top
+            
+        End If
+
+    Next
+        
+    ppSld.Shapes("表").Table.Cell(2, 1).Shape.TextFrame.TextRange _
+    .Text = Worksheets("Sheet1").Cells(7, 2).Value
+    ppSld.Shapes("表").Table.Cell(2, 2).Shape.TextFrame.TextRange _
+    .Text = Worksheets("Sheet1").Cells(15, 2).Value & "μm"
+    ppSld.Shapes("表").Table.Cell(2, 3).Shape.TextFrame.TextRange _
+    .Text = Worksheets("Sheet1").Cells(16, 2).Value
+    
+    If Worksheets("Sheet1").Cells(10, 2).Value = "ABC" Then
+    
+        Worksheets("Sheet1").Range(Cells(32, 25), Cells(46, 29)).CopyPicture
+        ppSld.Shapes.Paste
+        ppSld.Shapes(ppSld.Shapes.Count).Name = "画素"
+        ppSld.Shapes("画素").ZOrder msoSendToBack
+        ppSld.Shapes("画素").Left = markc(0, 0)
+        ppSld.Shapes("画素").Top = markc(0, 1)
+        ppSld.Shapes("画素").Width = 400
+        ppSld.Shapes("画素").Height = 220
+    
+        If Worksheets("Sheet1").Cells(11, 2).Value = "〇" Then
+    
+            Worksheets("Sheet1").Range(Cells(48, 25), Cells(56, 29)).CopyPicture
+            ppSld.Shapes.Paste
+            ppSld.Shapes(ppSld.Shapes.Count).Name = "stain"
+            ppSld.Shapes("stain").ZOrder msoSendToBack
+            ppSld.Shapes("stain").Left = markc(1, 0)
+            ppSld.Shapes("stain").Top = markc(1, 1)
+            ppSld.Shapes("stain").Width = 330
+            ppSld.Shapes("stain").Height = 150
+            
+        Else
+        
+            ppSld.Shapes(9).Visible = False
+            ppSld.Shapes(11).Visible = False
+            
+        End If
+        
+    Else
+    
+        Worksheets("Sheet1").Range(Cells(3, 25), Cells(17, 29)).CopyPicture
+        ppSld.Shapes.Paste
+        ppSld.Shapes(ppSld.Shapes.Count).Name = "画素"
+        ppSld.Shapes("画素").ZOrder msoSendToBack
+        ppSld.Shapes("画素").Left = markc(0, 0)
+        ppSld.Shapes("画素").Top = markc(0, 1)
+        ppSld.Shapes("画素").Width = 400
+        ppSld.Shapes("画素").Height = 110
+        
+        If Worksheets("Sheet1").Cells(11, 2).Value = "〇" Then
+    
+            Worksheets("Sheet1").Range(Cells(19, 25), Cells(27, 29)).CopyPicture
+            ppSld.Shapes.Paste
+            ppSld.Shapes(ppSld.Shapes.Count).Name = "stain"
+            ppSld.Shapes("stain").ZOrder msoSendToBack
+            ppSld.Shapes("stain").Left = markc(1, 0)
+            ppSld.Shapes("stain").Top = markc(1, 1)
+            ppSld.Shapes("stain").Width = 320
+            ppSld.Shapes("stain").Height = 90
+            
+        Else
+        
+            ppSld.Shapes(9).Visible = False
+            ppSld.Shapes(11).Visible = False
+            
+        End If
+        
+    End If
+    
+    '----------------------------------------------------------------------------------------
+    
+    
+    
+    
+    'レシピ設定内容2--------------------------------------------------------------------------
+    
+    Set ppSld = ppPrs.Slides(4)
+    
+    '1回前のマクロ実行で残ったグラフの消去-----------------------------------------------
+    Set zukei2 = Nothing
+    
+    For Each zukei2 In ppSld.Shapes
+        If zukei2.Name = "pad" Then
+            zukei2.Delete
+            Exit For
+        End If
+    Next
+    
+    '------------------------------------------------------------------------------------
+    
+    '1回前のマクロ実行で残ったグラフの消去-----------------------------------------------
+    Set zukei2 = Nothing
+    For Each zukei2 In ppSld.Shapes
+    
+        If zukei2.Name = "crack" Then
+            zukei2.Delete
+            Exit For
+        End If
+        
+    Next
+    '------------------------------------------------------------------------------------
+    
+    Set ppMapC = Nothing
+    
+    For Each ppMapC In ppSld.Shapes
+                
+        If ppMapC.Name = "位置1" Then
+            'MsgBox ppSld.Shapes("位置1").Top & "," & ppSld.Shapes("位置1").Left
+            markc(0, 0) = ppSld.Shapes("位置1").Left
+            markc(0, 1) = ppSld.Shapes("位置1").Top
+           
+        End If
+
+        If ppMapC.Name = "位置2" Then
+            'MsgBox ppSld.Shapes("位置2").Top & "," & ppSld.Shapes("位置2").Left
+            markc(1, 0) = ppSld.Shapes("位置2").Left
+            markc(1, 1) = ppSld.Shapes("位置2").Top
+            
+        End If
+
+    Next
+    
+    ppSld.Shapes("表").Table.Cell(2, 1).Shape.TextFrame.TextRange _
+    .Text = Worksheets("Sheet1").Cells(7, 2).Value
+    ppSld.Shapes("表").Table.Cell(2, 2).Shape.TextFrame.TextRange _
+    .Text = Worksheets("Sheet1").Cells(15, 2).Value & "μm"
+    ppSld.Shapes("表").Table.Cell(2, 3).Shape.TextFrame.TextRange _
+    .Text = Worksheets("Sheet1").Cells(16, 2).Value
+        
+        
+    If Worksheets("Sheet1").Cells(10, 2).Value = "ABC" Then
+        
+        Worksheets("Sheet1").Range(Cells(32, 31), Cells(40, 34)).CopyPicture
+        ppSld.Shapes.Paste
+        ppSld.Shapes(ppSld.Shapes.Count).Name = "pad"
+        ppSld.Shapes("pad").ZOrder msoSendToBack
+        ppSld.Shapes("pad").Left = markc(0, 0)
+        ppSld.Shapes("pad").Top = markc(0, 1)
+        ppSld.Shapes("pad").Width = 450
+        ppSld.Shapes("pad").Height = 200
+    
+        If Worksheets("Sheet1").Cells(12, 2).Value = "〇" Then
+    
+            Worksheets("Sheet1").Range(Cells(32, 36), Cells(36, 39)).CopyPicture
+            ppSld.Shapes.Paste
+            ppSld.Shapes(ppSld.Shapes.Count).Name = "crack"
+            ppSld.Shapes("crack").ZOrder msoSendToBack
+            ppSld.Shapes("crack").Left = markc(1, 0)
+            ppSld.Shapes("crack").Top = markc(1, 1)
+            ppSld.Shapes("crack").Width = 330
+            ppSld.Shapes("crack").Height = 120
+            
+        End If
+        
+    Else
+        
+        Worksheets("Sheet1").Range(Cells(3, 31), Cells(10, 34)).CopyPicture
+        ppSld.Shapes.Paste
+        ppSld.Shapes(ppSld.Shapes.Count).Name = "pad"
+        ppSld.Shapes("pad").ZOrder msoSendToBack
+        ppSld.Shapes("pad").Left = markc(0, 0)
+        ppSld.Shapes("pad").Top = markc(0, 1)
+        ppSld.Shapes("pad").Width = 450
+        ppSld.Shapes("pad").Height = 200
+    
+        If Worksheets("Sheet1").Cells(12, 2).Value = "〇" Then
+    
+            Worksheets("Sheet1").Range(Cells(3, 36), Cells(7, 39)).CopyPicture
+            ppSld.Shapes.Paste
+            ppSld.Shapes(ppSld.Shapes.Count).Name = "crack"
+            ppSld.Shapes("crack").ZOrder msoSendToBack
+            ppSld.Shapes("crack").Left = markc(1, 0)
+            ppSld.Shapes("crack").Top = markc(1, 1)
+            ppSld.Shapes("crack").Width = 330
+            ppSld.Shapes("crack").Height = 120
+            
+        End If
+        
+    End If
+    
+    '----------------------------------------------------------------------------------------
     
     ppPrs.Save
     ppApp.Quit
