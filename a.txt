@@ -1,8 +1,7 @@
 Option Explicit
 
-Sub a()
-    Dim sheetN As String
-    
+Sub GenePara()
+
     Dim Hres As Long 'Height result
     'Dim Passn(100) As String  'Pass name
     Dim hyouzi
@@ -24,39 +23,47 @@ Sub a()
     Dim Colnum As Long
     Dim ColnumM As Long
     Dim RownumM As Long
-    
+    Dim LynxFlag
+    Dim PadFlag
     Passnc = 27
     sheetN = ActiveSheet.Name
     Set sheets3 = Workbooks(FileReN).Worksheets(sheetN)
     
-    'パラメータ格納---------------------------------------------------------------------------
+    '汎用化パラメータ格納---------------------------------------------------------------------------
     '5次元の配列になっていて複雑なので、触るときはBUをとって触ってください。
-    '
+    '5次元配列になる・・・Param(Passname)(Zonename)(Argorithmname)(Parameter)(Parameter Real Number Flag) or Param(Passname,Zonename,Argoname,Parameter,Parameter Real Number Flag)
     '例:)Param(1)(0)(0)(0)(0) =CRACK-3.5x, Param(2)(1)(1)(1)(1) = -1.0
-    '
+    'if Param(1)(1)(1)(3)(0) =　Gaso-5x-JFOのPostProcessのScanOverviewImageProcのDieMaterial_MaxGl Then この時DieMaterial_MaxGlが格納されていたら最後の要素を１にし実数表示
 
     For Passname = 1 To 10
         
-        If TypeName(sheets3.Cells(Passnc + 1, 2).Value) = "Empty" Then
-            Exit For
-        Else
+        LynxFlag = 0
+        PadFlag = False
         
+        If TypeName(sheets3.Cells(Passnc + 1, 2).Value) = "Empty" Then
+            
+            Exit For
+            
+        Else
+            
             Param(Passname, 0, 0, 0, 0) = sheets3.Cells(Passnc + 1, 2).Value
-           
+            
             k = 1
             
             For j = 2 To 100 Step 2
-            
+                If InStr(UCase(sheets3.Cells(Passnc + 2, j + 1).Value), UCase("pad")) > 0 Then
+                    PadFlag = True
+                End If
+                
                 If sheets3.Cells(Passnc + 2, j).Value = "ZoneName" Then
                 
                     'Zonen(k) = sheets3.Cells(Passnc + 2, j + 1).Value
                     Param(Passname, k, 0, 0, 0) = sheets3.Cells(Passnc + 1, 2).Value & "," & sheets3.Cells(Passnc + 2, j + 1).Value
-                    
+        
                 End If
                 
-                
                 If TypeName(sheets3.Cells(Passnc + 2, j).Value) = "Empty" Then
-            
+                    
                     Exit For
                     
                 End If
@@ -64,6 +71,18 @@ Sub a()
                 l = 0
                 m = 1
                 For i = Passnc + 3 To Passnc + 300
+                    
+                    If sheets3.Cells(i, j + 1).Value = "Lynx Pixel" Then
+                        LynxFlag = LynxFlag + 1
+                        
+                        If LynxFlag = 2 Then
+                            P13Stain(0) = i
+                            P13Stain(1) = j
+                        Else
+                        
+                        End If
+                    End If
+                    
                     
                     If sheets3.Cells(i, j).Value = "AlgorithmName" Then
                 
@@ -81,10 +100,10 @@ Sub a()
                     
                         If Hres < i Then
                             Hres = i
-                            
                         End If
                         
-                        k = k + 1 '
+                        k = k + 1
+                        
                         Exit For
                         
                     Else
@@ -105,10 +124,24 @@ Sub a()
             Next
         End If
         
+        If LynxFlag Then
+            P13Gaso(2) = Passnc + 2
+            P13Gaso(1) = j - 1
+            P13Gaso(0) = Hres
+        End If
+
+        If PadFlag Then
+            P12Pad(2) = Passnc + 2
+            P12Pad(1) = j - 1
+            P12Pad(0) = Hres
+        End If
+        
         Passnc = Hres + 1
         
     Next
-    '---------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------
+    
+    
     
 '    For Each hyouzi In Param
 '       MsgBox hyouzi
