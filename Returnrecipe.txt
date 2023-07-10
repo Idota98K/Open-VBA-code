@@ -6,16 +6,20 @@ Public FileN As String '↑ファイル名だけ
 Public FileRL As String 'Recipe Load
 Public FileRe As String 'Result(レシピ出力先)
 Public MainM As String 'メインマクロ
-Public Param(10, 15, 15, 100, 1)
-Public MParam(10, 15, 15, 100, 1)
+Public Param(5, 8, 10, 100, 1)
+Public MParam(5, 8, 10, 100, 1)
 Public P13Gaso(2)
 Public P13Stain(1)
 Public P12Pad(2)
 Public sheetN As String
 Public ZAFFlag
+Public Zonenumber(10)
+Public PassnameM As Long
+Public Hresult As Long
 
-Dim i As Long, j As Long, k As Long, Passname As Long
-Dim l As Long, m As Long, n As Long
+Dim i As Long, j As Long, k As Long
+Dim l As Long, m As Long, n As Long, o As String
+Dim MFlag As Boolean 'Falseがマスターまたは比較元
     
 Sub Returnrecipe()
 
@@ -47,7 +51,9 @@ Sub Returnrecipe()
     Dim zukei2 As Object
     Dim MFlag
     Dim LynxFlag
-    
+    Dim RPFlag
+    Dim ZoneHantei
+    Dim MZoneHantei
     MainM = ActiveWorkbook.Name
     Filename = Worksheets("Sheet1").Cells(4, 5).Value
     FileRL = Worksheets("Sheet1").Cells(2, 5).Value
@@ -57,6 +63,11 @@ Sub Returnrecipe()
     Rety = Worksheets("Sheet1").Cells(2, 2).Value
     Mapccs = Worksheets("Sheet1").Cells(9, 5).Value
     Mapdice = Worksheets("Sheet1").Cells(10, 5).Value
+    If Worksheets("Sheet1").Cells(16, 2).Value = "有り" Then
+        ZAFFlag = True
+    Else
+        ZAFFlag = False
+    End If
     
 '    Dim ppApp As New PowerPoint.Application
 '    Set ppApp = CreateObject("PowerPoint.Application")
@@ -193,12 +204,6 @@ Sub Returnrecipe()
         
     'パラメータ取得---------------------------------------------------------------------
     
-    If Worksheets("Sheet1").Cells(16, 2).Value = "有り" Then
-        ZAFFlag = True
-    Else
-        ZAFFlag = False
-    End If
-    
     sheets2.Cells(Colnum, MRownum).Select
     
     Selection.hyperlinks(1).Follow NewWindow:=True
@@ -222,7 +227,7 @@ Sub Returnrecipe()
     ThisWorkbook.Activate
     
     MFlag = False
-    
+
     If Worksheets("Sheet1").Cells(16, 2).Value = "有り" Then
         ZAFFlag = True
     Else
@@ -230,14 +235,14 @@ Sub Returnrecipe()
     End If
     
     If Worksheets("Sheet1").Cells(10, 2).Value = "ABC" Then
-        For i = 1 To 10
+        For i = 1 To PassnameM - 1
         
             LynxFlag = 0
             MLynxFlag = 0
     
-            For j = 1 To 15
+            For j = 1 To Zonenumber(PassnameM)
                 
-                For k = 1 To 15
+                For k = 1 To 10
                 
                     If InStr(Param(i, j, k, 0, 0), "Lynx Pixel") > 0 Then
                     
@@ -267,14 +272,20 @@ Sub Returnrecipe()
                         MLynxFlag = 99
                     End If
                     
-                    For l = 1 To 100
+                    For l = 1 To Hresult
                     
-                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("VChipping")) > 0 Or InStr(UCase(Param(i, j, 0, 0, 0)), UCase("TATE")) > 0 Then '　Zone名のチッピング特定
+                        ZoneHantei = Split(Param(i, j, 0, 0, 0), ",") 'これ使わないといけないせいでjとiの要素数と計算数一致させる必要がある
+                        MZoneHantei = Split(MParam(i, j, 0, 0, 0), ",")
+                        
+                        If InStr(UCase(ZoneHantei(1)), UCase("VChipping")) > 0 Or InStr(UCase(ZoneHantei(1)), UCase("TATE")) > 0 Then '　Zone名のチッピング特定
+                            n = 34
 '                            For m = 34 To 36 '複雑なのとコードが長いので別プロシージャか関数にするのが良い。別プロシージャにすると重くなるのでとりあえずなし
-'                                n = 34
 '                                Call Returnchipping(m, n, MFlag)
 '                            Next
-                            If InStr(Param(i, j, k, l, 0), "Low_Delta") > 0 Then
+'                            Call hantei(34, n, "Low_Delta", True)
+'                            Call hantei(35, n, "DarkDiameter", True)
+'                            Call hantei(36, n, "DarkLength", True)
+                            If InStr(Param(i, j, k, l, 0), "Low_Delta") > 0 Then 'この記述が一番計算負荷低いかも
                                 Worksheets("Sheet1").Cells(34, 34).Value = Param(i, j, k, l, 1)
                             End If
                             If InStr(Param(i, j, k, l, 0), "DarkDiameter") > 0 Then
@@ -286,12 +297,15 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("VChipping")) > 0 Or InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("TATE")) > 0 Then '　Master Zone名のチッピング特定
+                        If InStr(UCase(MZoneHantei(1)), UCase("VChipping")) > 0 Or InStr(UCase(MZoneHantei(1)), UCase("TATE")) > 0 Then '　Master Zone名のチッピング特定
 '                            For m = 34 To 36
 '                                n = 33
 '                                Call Returnchipping(m, n, MFlag)
 '                            Next
-                            
+'                            n = 33
+'                            Call hantei(34, n, "Low_Delta", False)
+'                            Call hantei(35, n, "DarkDiameter", False)
+'                            Call hantei(36, n, "DarkLength", False)
                             If InStr(MParam(i, j, k, l, 0), "Low_Delta") > 0 Then
                                 Worksheets("Sheet1").Cells(34, 33).Value = MParam(i, j, k, l, 1)
                             End If
@@ -304,12 +318,15 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("pad")) > 0 Then '　Zone名のPAD特定
+                        If InStr(UCase(ZoneHantei(1)), UCase("pad")) > 0 And InStr(UCase(Param(i, j, 0, 0, 0)), UCase("Zone-PAD")) = 0 Then '　Zone名のPAD特定
 '                            For m = 38 To 40
 '                                n = 34
 '                                Call Returnchipping(m, n, MFlag)
 '                            Next
-                            
+'                            n = 34
+'                            Call hantei(38, n, "Low_Delta", True)
+'                            Call hantei(39, n, "DarkDiameter", True)
+'                            Call hantei(40, n, "DarkLength", True)
                             If InStr(Param(i, j, k, l, 0), "Low_Delta") > 0 Then
                                 Worksheets("Sheet1").Cells(38, 34).Value = Param(i, j, k, l, 1)
                             End If
@@ -319,16 +336,19 @@ Sub Returnrecipe()
                             If InStr(Param(i, j, k, l, 0), "DarkLength") > 0 Then
                                 Worksheets("Sheet1").Cells(40, 34).Value = Param(i, j, k, l, 1)
                             End If
-                            
+                            MsgBox Param(i, j, 0, 0, 0) & l
                         End If
                         
-                        If InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("pad")) > 0 Then 'Master　Zone名のPAD特定
+                        If InStr(UCase(MZoneHantei(1)), UCase("pad")) > 0 And InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("Zone-PAD")) = 0 Then 'Master　Zone名のPAD特定
                         
 '                            For m = 38 To 40
 '                                n = 33
 '                                Call Returnchipping(m, n, MFlag)
 '                            Next
-                            
+'                            n = 33
+'                            Call hantei(38, n, "Low_Delta", False)
+'                            Call hantei(39, n, "DarkDiameter", False)
+'                            Call hantei(40, n, "DarkLength", False)
                             If InStr(MParam(i, j, k, l, 0), "Low_Delta") > 0 Then
                                 Worksheets("Sheet1").Cells(38, 33).Value = MParam(i, j, k, l, 1)
                             End If
@@ -341,7 +361,7 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("crack")) > 0 Then '　Zone名のcrack特定
+                        If InStr(UCase(ZoneHantei(1)), UCase("crack")) > 0 Then '　Zone名のcrack特定
 '                            For m = 34 To 36
 '                                n = 39
 '                                Call Returnchipping(m, n, MFlag)
@@ -359,7 +379,7 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("crack")) > 0 Then 'Master　Zone名のcrack特定
+                        If InStr(UCase(MZoneHantei(1)), UCase("crack")) > 0 Then 'Master　Zone名のcrack特定
 
 '                            For m = 34 To 36
 '                                n = 38
@@ -757,14 +777,14 @@ Sub Returnrecipe()
         
     Else '汎用品でPAD高感度なし
          '上のコピペだが参照するパラメータの名前が違うZoneもあるので注意
-       For i = 1 To 10
+       For i = 1 To PassnameM
         
             LynxFlag = 0
             MLynxFlag = 0
             
-            For j = 1 To 15
+            For j = 1 To Zonenumber(PassnameM)
                 
-                For k = 1 To 15
+                For k = 1 To 10
                 
                     If InStr(Param(i, j, k, 0, 0), "Lynx Pixel") > 0 Then
                     
@@ -786,9 +806,11 @@ Sub Returnrecipe()
                         
                     End If
                     
-                    For l = 1 To 100
+                    For l = 1 To Hresult
                     
-                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("VChipping")) > 0 Or InStr(UCase(Param(i, j, 0, 0, 0)), UCase("TATE")) > 0 Then '　Zone名のチッピング特定
+                        ZoneHantei = Split(Param(i, j, 0, 0, 0), ",")
+                        MZoneHantei = Split(MParam(i, j, 0, 0, 0), ",")
+                        If InStr(UCase(ZoneHantei(1)), UCase("VChipping")) > 0 Or InStr(UCase(ZoneHantei(1)), UCase("TATE")) > 0 Then '　Zone名のチッピング特定
 '                            For m = 5 To 7
 '                                n = 34
 '                                Call Returnchipping(m, n, MFlag)
@@ -807,7 +829,7 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("VChipping")) > 0 Or InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("TATE")) > 0 Then '　Master Zone名のチッピング特定
+                        If InStr(UCase(MZoneHantei(1)), UCase("VChipping")) > 0 Or InStr(UCase(MZoneHantei(1)), UCase("TATE")) > 0 Then '　Master Zone名のチッピング特定
                             
                             If InStr(MParam(i, j, k, l, 0), "Low_Delta") > 0 Then
                                 Worksheets("Sheet1").Cells(5, 33).Value = MParam(i, j, k, l, 1)
@@ -821,7 +843,7 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("pad")) > 0 Then '　Zone名のPAD特定
+                        If InStr(UCase(ZoneHantei(1)), UCase("pad")) > 0 Then '　Zone名のPAD特定
                             
                             If InStr(Param(i, j, k, l, 0), "PadLowThreshold") > 0 Then
                                 Worksheets("Sheet1").Cells(9, 34).Value = Param(i, j, k, l, 1)
@@ -833,7 +855,7 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("pad")) > 0 Then 'Master　Zone名のPAD特定
+                        If InStr(UCase(MZoneHantei(1)), UCase("pad")) > 0 Then 'Master　Zone名のPAD特定
                             
                             If InStr(MParam(i, j, k, l, 0), "PadLowThreshold") > 0 Then
                                 Worksheets("Sheet1").Cells(9, 33).Value = MParam(i, j, k, l, 1)
@@ -844,7 +866,7 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(Param(i, j, 0, 0, 0)), UCase("crack")) > 0 Then '　Zone名のcrack特定
+                        If InStr(UCase(ZoneHantei(1)), UCase("crack")) > 0 Then '　Zone名のcrack特定
                            
                             If InStr(Param(i, j, k, l, 0), "UniformHighThr") > 0 Then
                                 Worksheets("Sheet1").Cells(5, 39).Value = Param(i, j, k, l, 1)
@@ -858,7 +880,7 @@ Sub Returnrecipe()
                             
                         End If
                         
-                        If InStr(UCase(MParam(i, j, 0, 0, 0)), UCase("crack")) > 0 Then 'Master　Zone名のcrack特定
+                        If InStr(UCase(MZoneHantei(1)), UCase("crack")) > 0 Then 'Master　Zone名のcrack特定
                            
                             If InStr(MParam(i, j, k, l, 0), "UniformHighThr") > 0 Then
                                 Worksheets("Sheet1").Cells(5, 38).Value = MParam(i, j, k, l, 1)
@@ -1282,7 +1304,7 @@ End Sub
 '    End If
 '
 'End Sub
-'
+
 'Sub Returncrack(ByVal m, ByVal n, ByRef MFlag)
 '    If MFlag Then
 '
@@ -1347,6 +1369,25 @@ End Sub
 '        MFlag = False
 '
 '    Else
+'
+'    End If
+'
+'End Sub
+
+'Sub hantei(ByVal m, ByVal n, ByVal o, ByVal MFlag)
+'    If MFlag Then
+'
+'        If InStr(Param(i, j, k, l, 0), o) > 0 Then
+'            Worksheets("Sheet1").Cells(m, n).Value = Param(i, j, k, l, 1)
+'        End If
+'    Else
+'
+'        If InStr(MParam(i, j, k, l, 0), o) > 0 Then
+'            Worksheets("Sheet1").Cells(m, n).Value = MParam(i, j, k, l, 1)
+'        End If
+'
+'    End If
+'End Sub
 '
 '    End If
 '
