@@ -1,44 +1,482 @@
-Sub GetMail()
+'機密に触れそうな部分は削除しています
+Option Explicit
+Dim ankenFlag
+Dim rowcount As Long
+Dim sheetn
+
+Sub GetCIS()
+    Dim bangou%
+    Dim Operater As Worksheet
+    Dim newSh As Worksheet
     Dim oApp As New Outlook.Application
     Dim oNs As Outlook.Namespace
     Dim maillist As Items
     Dim days
-    Dim oF As Folder
-    Dim i As Long
+    Dim oF As Folders
+    Dim oF2 As Folder
+    Dim i As Long, j As Long, k As Long, l As Long
     Dim today As Date
     Dim strFilter As String
     Dim Filtercount As Long
     Dim count(100) As Long
-    Dim ccc(10) As String
+    Dim ccc(100) As Long
+    Dim CIS(50)
+    Dim CIS1
+    Dim CIS2
+    Dim Subjectnumber
+    Dim LstRow1
+    
+
+    Set Operater = ThisWorkbook.Worksheets("Sheet1")
+    Worksheets.Add After:=Operater
+    Set newSh = ActiveSheet
+    newSh.Name = "" & ThisWorkbook.Sheets.count - 1
+    sheetn = "" & ThisWorkbook.Sheets.count - 1
+    
+    Columns("A").ColumnWidth = 16
+    Columns("D").ColumnWidth = 11
     Set oNs = oApp.GetNamespace("MAPI")
-    Set oF = oNs.GetDefaultFolder(olFolderInbox)
+    Set oF = oNs.GetDefaultFolder(olFolderInbox).Folders
+    Set oF2 = oNs.GetDefaultFolder(olFolderInbox).Folders(Worksheets("Sheet1").Cells(2, 2).Value)
     today = Date
-    days = DateAdd("d", -7, Date)
+    days = DateAdd("d", -1 * (Worksheets("Sheet1").Cells(7, 2).Value), Date)
     
     strFilter = "[受信日時] <= '" & Now & _
                  "' AND [受信日時] >= '" & days & " 23:59'"
-    Set maillist = oF.Items.Restrict(strFilter)
-    maillist.Sort "[ReceivedTime]", True
+    k = 1
+    Filtercount = 1
     
+    Worksheets(sheetn).Cells(1, 1).Value = "日時"
+    Worksheets(sheetn).Cells(1, 2).Value = "タイプ"
+    Worksheets(sheetn).Cells(1, 3).Value = "対象工程"
+    Worksheets(sheetn).Cells(1, 4).Value = "対象装置"
+    Worksheets(sheetn).Cells(1, 5).Value = "コメント"
     
+    If Worksheets("Sheet1").Cells(1, 2).Value = "受信トレイ" Then
+    
+        Set maillist = oNs.GetDefaultFolder(olFolderInbox).Items.Restrict(strFilter)
+        maillist.Sort "[ReceivedTime]", True
+        
+        CIS(k) = Filtercount
+        
+        For i = 1 To maillist.count
+            If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                    count(Filtercount) = i
+                    Filtercount = Filtercount + 1
+                End If
+                
+            End If
+        Next
+        
+        If CIS(k) <> 1 Or Filtercount <> 1 Then
+        
+            For i = CIS(k) To Filtercount - 1
+                Subjectnumber = InStr(maillist.Item(count(i)).Subject, "")
+                CIS1 = Split(maillist.Item(count(i)).Body, vbLf)
+                Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(count(i)).Subject, Subjectnumber, 6)
+                Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(count(i)).ReceivedTime
+                
+                For l = 0 To UBound(CIS1)
+                    
+                    If InStr(CIS1(l), "対象工程") <> 0 Then
+                        Worksheets(sheetn).Cells(i + 1, 3).Value = Mid(CIS1(l), InStr(CIS1(l), "：") + 1)
+                    End If
+                    
+                    If InStr(CIS1(l), "対象装置") <> 0 Then
+                        Worksheets(sheetn).Cells(i + 1, 4).Value = Mid(CIS1(l), InStr(CIS1(l), "：") + 1)
+                    End If
+                    
+                    If InStr(CIS1(l), "コメント") <> 0 Then
+                        Worksheets(sheetn).Cells(i + 1, 5).Value = CIS1(l + 1)
+                    End If
+                    
+                Next
+            
+            Next
+            
+        End If
+    Else
+        For j = 1 To oF.count
+            If oF(j) = Worksheets("Sheet1").Cells(1, 2).Value Then
+            
+                Set maillist = oF(j).Items.Restrict(strFilter)
+                maillist.Sort "[ReceivedTime]", True
+                
+                CIS(k) = Filtercount
+                
+                For i = 1 To maillist.count
+                    If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                        If InStr(maillist.Item(i).Subject, "IMX") <> 0 Then
+                            count(Filtercount) = i
+                            Filtercount = Filtercount + 1
+                        End If
+                        
+                    End If
+                Next
+                
+                If CIS(k) <> 1 Or Filtercount <> 1 Then
+                
+                    For i = CIS(k) To Filtercount - 1
+                        Subjectnumber = InStr(maillist.Item(count(i)).Subject, "IMX")
+                        CIS1 = Split(maillist.Item(count(i)).Body, vbLf)
+                        Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(count(i)).Subject, Subjectnumber, 6)
+                        Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(count(i)).ReceivedTime
+                        rowcount = 3
+                        ankenFlag = 0
+                        For l = 0 To UBound(CIS1)
+                            
+                            If InStr(CIS1(l), "コメント") <> 0 Then
+                                Worksheets(sheetn).Cells(i + 1, 19).Value = CIS1(l + 1)
+                            End If
+                            If InStr(CIS1(l), "案件No") <> 0 Then
+                                ankenFlag = ankenFlag + 1
+                            End If
+                            If ankenFlag = 2 Then
+                                Call commentout(i, CIS1(l), rowcount, "案件No")
+                            End If
+                            
+                            Call commentout(i, CIS1(l), rowcount, "件名")
+                            Call commentout(i, CIS1(l), rowcount, "")
+                            Call commentout(i, CIS1(l), rowcount, "")
+                            Call commentout(i, CIS1(l), rowcount, "対象工程")
+                            Call commentout(i, CIS1(l), rowcount, "対象装置")
+                            Call commentout(i, CIS1(l), rowcount, "優先度")
+                            Call commentout(i, CIS1(l), rowcount, "")
+                            Call commentout(i, CIS1(l), rowcount, "")
+                            Call commentout(i, CIS1(l), rowcount, "")
+                            Call commentout(i, CIS1(l), rowcount, "")
+                            Call commentout(i, CIS1(l), rowcount, "1")
+                            Call commentout(i, CIS1(l), rowcount, "2")
+                            Call commentout(i, CIS1(l), rowcount, "1")
+                            Call commentout(i, CIS1(l), rowcount, "2")
+                            Call commentout(i, CIS1(l), rowcount, "対象ロット")
+                            
+                        Next
+                    
+                    Next
+                    
+                End If
+                
+                k = k + 1
+                
+            ElseIf oF(j) = Worksheets("Sheet1").Cells(2, 2).Value Then
+                
+                Set maillist = oF(j).Items.Restrict(strFilter)
+                maillist.Sort "[ReceivedTime]", True
+                
+                CIS(k) = Filtercount
+                
+                For i = 1 To maillist.count
+                    
+                    If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                        If InStr(maillist.Item(i).Subject, "IMX") <> 0 Then
+                           
+                            count(Filtercount) = i
+                            Filtercount = Filtercount + 1
+    
+                        End If
+                        
+                    End If
+                Next
+                
+                If CIS(k) <> 1 Or Filtercount <> 1 Then
+                    For i = CIS(k) To Filtercount - 1
+                        Subjectnumber = InStr(maillist.Item(count(i)).Subject, "IMX")
+                        CIS2 = Split(maillist.Item(count(i)).Body, vbLf)
+                        Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(count(i)).Subject, Subjectnumber, 6)
+                        Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(count(i)).ReceivedTime
+                        rowcount = 3
+                        ankenFlag = 0
+                        
+                        For l = 0 To UBound(CIS2)
+                        
+                            If InStr(CIS2(l), "コメント") <> 0 Then
+                                Worksheets(sheetn).Cells(i + 1, 19).Value = CIS2(l + 1)
+                            End If
+                            If InStr(CIS2(l), "案件No") <> 0 Then
+                                ankenFlag = ankenFlag + 1
+                            End If
+                            If ankenFlag = 2 Then
+                                Call commentout(i, CIS2(l), rowcount, "案件No")
+                            End If
+                            
+                            Call commentout(i, CIS2(l), rowcount, "件名")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "対象工程")
+                            Call commentout(i, CIS2(l), rowcount, "対象装置")
+                            Call commentout(i, CIS2(l), rowcount, "優先度")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            Call commentout(i, CIS2(l), rowcount, "")
+                            
+                            
+                        Next
+                    
+                    Next
+                    
+                End If
+                
+                k = k + 1
+                
+            End If
+            
+        Next
+        
+    End If
+    LstRow1 = Worksheets(sheetn).Cells(Rows.count, 1).End(xlUp).Row
+    Call Worksheets(sheetn).Range("A2:A" & LstRow1).Sort(Range("A:T"), xlDescending)
+    Range("A:D").HorizontalAlignment = xlCenter
 '↓この書き方でも時間指定できる
 '        If DateValue(maillist.Item(i).ReceivedTime) <= days Then
 '            If InStr(maillist.Item(i).Subject, "MARUI") Then
 '                Cells(i, 1).Value = maillist.Item(i).Subject
 '            End If
 '        End If
+
+   
+End Sub
+
+Sub Get()
+    Dim bangou%
+    Dim Operater As Worksheet
+    Dim newSh As Worksheet
+    Dim oApp As New Outlook.Application
+    Dim oNs As Outlook.Namespace
+    Dim maillist As Items
+    Dim days
+    Dim oF As Folders
+    Dim oF2 As Folder
+    Dim i As Long, j As Long, k As Long, l As Long
+    Dim today As Date
+    Dim strFilter As String
+    Dim FiltercountV As Long
+    Dim countV(300) As Long
+    Dim ccc(100) As Long
+    Dim 
+    Dim 
+    Dim 
+    Dim Subjectnumber
+    Dim LstRow1
     
-    Filtercount = 0
-    For i = 1 To maillist.count
-        If InStr(maillist.Item(i).Subject, "MARUI") Then
-            count(Filtercount + 1) = i
-            Filtercount = Filtercount + 1
+    Set Operater = ThisWorkbook.Worksheets("Sheet1")
+    Worksheets.Add After:=Operater
+    Set newSh = ActiveSheet
+    newSh.Name = "モニター" & ThisWorkbook.Sheets.count - 1
+    sheetn = "モニター" & ThisWorkbook.Sheets.count - 1
+    
+    Columns("A").ColumnWidth = 16
+    Columns("D").ColumnWidth = 11
+    Set oNs = oApp.GetNamespace("MAPI")
+    Set oF = oNs.GetDefaultFolder(olFolderInbox).Folders
+    Set oF2 = oNs.GetDefaultFolder(olFolderInbox).Folders(Worksheets("Sheet1").Cells(2, 2).Value)
+    today = Date
+    days = DateAdd("d", -1 * (Worksheets("Sheet1").Cells(7, 2).Value), Date)
+    
+    strFilter = "[受信日時] <= '" & Now & _
+                 "' AND [受信日時] >= '" & days & " 23:59'"
+    k = 1
+    FiltercountV = 1
+    
+    Worksheets(sheetn).Cells(1, 1).Value = "日時"
+    Worksheets(sheetn).Cells(1, 2).Value = "タイプ"
+    Worksheets(sheetn).Cells(1, 3).Value = "対象工程"
+    Worksheets(sheetn).Cells(1, 4).Value = "対象装置"
+    Worksheets(sheetn).Cells(1, 5).Value = "コメント"
+    
+    If Worksheets("Sheet1").Cells(1, 2).Value = "受信トレイ" Then
+    
+        Set maillist = oNs.GetDefaultFolder(olFolderInbox).Items.Restrict(strFilter)
+        maillist.Sort "[ReceivedTime]", True
+        (k) = FiltercountV
+        
+        For i = 1 To maillist.count
+            If InStr(maillist.Item(i).Subject, "MARUI") <> 0 Then
+                If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                    countV(FiltercountV) = i
+                    FiltercountV = FiltercountV + 1
+                End If
+                
+            End If
+        Next
+        
+        If Vos(k) <> 1 Or FiltercountV <> 1 Then
+        
+            For i = Vos(k) To FiltercountV - 1
+            
+                Subjectnumber = InStr(maillist.Item(countV(i)).Subject, "")
+                1 = Split(maillist.Item(countV(i)).Body, vbLf)
+                Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(countV(i)).Subject, Subjectnumber, 7)
+                Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(countV(i)).ReceivedTime
+                
+                For l = 0 To UBound(Vos1)
+                
+                    If InStr((l), "対象工程") <> 0 Then
+                        Worksheets(sheetn).Cells(i + 1, 3).Value = Mid((l), InStr((l), "：") + 1)
+                    End If
+                    
+                    If InStr((l), "対象装置") <> 0 Then
+                        Worksheets(sheetn).Cells(i + 1, 4).Value = Mid((l), InStr((l), "：") + 1)
+                    End If
+                    
+                    If InStr((l), "コメント") <> 0 Then
+                        Worksheets(sheetn).Cells(i + 1, 5).Value = 1(l + 1)
+                    End If
+                    
+                Next
+                
+            Next
+            
         End If
-    Next
     
-    For i = 1 To Filtercount
-        Cells(i, 1).Value = maillist.Item(count(i)).Subject
-'        ccc(i) = maillist.Item(count(i)).Subject 条件指定して文章入れれる
-    Next
+    Else
     
+        For j = 1 To oF.count
+            If oF(j) = Worksheets("Sheet1").Cells(1, 2).Value Then
+            
+                Set maillist = oF(j).Items.Restrict(strFilter)
+                maillist.Sort "[ReceivedTime]", True
+                (k) = FiltercountV
+                
+                For i = 1 To maillist.count
+                    If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                        If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                            countV(FiltercountV) = i
+                            FiltercountV = FiltercountV + 1
+                        End If
+                        
+                    End If
+                Next
+                If Vos(k) <> 1 Or FiltercountV <> 1 Then
+                    For i = Vos(k) To FiltercountV - 1
+                    
+                        Subjectnumber = InStr(maillist.Item(countV(i)).Subject, "")
+                        1 = Split(maillist.Item(countV(i)).Body, vbLf)
+                        Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(countV(i)).Subject, Subjectnumber, 7)
+                        Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(countV(i)).ReceivedTime
+                        rowcount = 3
+                        ankenFlag = 0
+                        
+                        For l = 0 To UBound(Vos1)
+                            
+                            If InStr(Vos1(l), "コメント") <> 0 Then
+                                Worksheets(sheetn).Cells(i + 1, 19).Value = Vos1(l + 1)
+                            End If
+                            If InStr(Vos1(l), "案件No") <> 0 Then
+                                ankenFlag = ankenFlag + 1
+                            End If
+                            If ankenFlag = 2 Then
+                                Call commentout(i, Vos1(l), rowcount, "案件No")
+                            End If
+                            Call commentout(i, 1(l), rowcount, "件名")
+                            Call commentout(i, 1(l), rowcount, "")
+                            Call commentout(i, 1(l), rowcount, "")
+                            Call commentout(i, 1(l), rowcount, "対象工程")
+                            Call commentout(i, 1(l), rowcount, "対象装置")
+                            Call commentout(i, 1(l), rowcount, "不目")
+                            Call commentout(i, 1(l), rowcount, "1")
+                            Call commentout(i, 1(l), rowcount, "2")
+                            
+                        Next
+                        
+                    Next
+                    
+                End If
+                
+                k = k + 1
+                
+            ElseIf oF(j) = Worksheets("Sheet1").Cells(2, 2).Value Then
+                
+                Set maillist = oF(j).Items.Restrict(strFilter)
+                maillist.Sort "[ReceivedTime]", True
+               (k) = FiltercountV
+                
+                For i = 1 To maillist.count
+                
+                    If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                    
+                        If InStr(maillist.Item(i).Subject, "") <> 0 Then
+                           
+                            countV(FiltercountV) = i
+                            FiltercountV = FiltercountV + 1
+                            
+                        End If
+                        
+                    End If
+                    
+                Next
+                
+                If (k) <> 1 Or FiltercountV <> 1 Then
+                
+                    For i = (k) To FiltercountV - 1
+                    
+                        Subjectnumber = InStr(maillist.Item(countV(i)).Subject, "")
+                        2 = Split(maillist.Item(countV(i)).Body, vbLf)
+                        Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(countV(i)).Subject, Subjectnumber, 7)
+                        Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(countV(i)).ReceivedTime
+                        rowcount = 3
+                        ankenFlag = 0
+                        
+                        For l = 0 To UBound(2)
+                        
+                            If InStr((l), "コメント") <> 0 Then
+                                Worksheets(sheetn).Cells(i + 1, 19).Value = 2(l + 1)
+                            End If
+                            If InStr((l), "案件No") <> 0 Then
+                                ankenFlag = ankenFlag + 1
+                            End If
+                            If ankenFlag = 2 Then
+                                Call commentout(i, (l), rowcount, "案件No")
+                            End If
+                            Call commentout(i, (l), rowcount, "")
+                            Call commentout(i, (l), rowcount, "")
+                            Call commentout(i, (l), rowcount, "")
+                            Call commentout(i, (l), rowcount, "")
+                            Call commentout(i, (l), rowcount, "")
+                            Call commentout(i, (l), rowcount, "")
+                            Call commentout(i, (l), rowcount, "")
+                            Call commentout(i, (l), rowcount, "")
+                        
+                        Next
+                        
+                    Next
+                    
+                End If
+                
+                k = k + 1
+                
+            End If
+            
+        Next
+        
+    End If
+    LstRow1 = Worksheets(sheetn).Cells(Rows.count, 1).End(xlUp).Row
+    
+    Call Worksheets(sheetn).Range("A2:A" & LstRow1).Sort(Range("A:A"), xlDescending)
+    
+    Range("A:D").HorizontalAlignment = xlCenter
+'↓この書き方でも時間指定できる
+'        If DateValue(maillist.Item(i).ReceivedTime) <= days Then
+'            If InStr(maillist.Item(i).Subject, "") Then
+'                Cells(i, 1).Value = maillist.Item(i).Subject
+'            End If
+'        End If
+    
+
+   
+End Sub
+
+Sub commentout(ByVal i As Long, ByVal j As String, r As Long, ByVal mozi As String)
+    
+    If InStr(j, mozi) <> 0 Then
+        Worksheets(sheetn).Cells(i + 1, r).Value = Mid(j, InStr(j, "：") + 1)
+        r = r + 1
+    End If
 End Sub
