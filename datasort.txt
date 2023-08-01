@@ -1,0 +1,235 @@
+Option Explicit
+Public MARUIColumn
+Public sheetn
+
+Sub loadaccessdata()
+    Dim Lkai As String, Zenbu As String
+    Dim LkaiN As String, ZenbuN As String
+    Dim MaruiNo(3000) 'L解で条件検索して出たMARUINoを格納
+    Dim MaruiNdata(300, 44)
+    Dim Maruidata(3000, 44)
+    Dim i As Long, j As Long, si As Long, sj As Long, k As Long, l As String
+    Dim LstRow1 As Long, LstRow2 As Long, LstColumn1 As Long, LstColumn2 As Long, LstRow3 As Long
+    Dim Flag
+    Dim Flag1
+    Dim newsh
+    Dim Guraphdata
+    Dim Flag2
+    Dim MaruiNo1(1, 500)
+    Worksheets.Add After:=ThisWorkbook.Worksheets("Access対応")
+    Set newsh = ActiveSheet
+    newsh.Name = "NP棟MARUIモニター" & ThisWorkbook.Sheets.count
+    sheetn = "NP棟MARUIモニター" & ThisWorkbook.Sheets.count
+    Columns("A:X").ColumnWidth = 15
+    Columns("AA").ColumnWidth = 40
+    Columns("AB:AR").ColumnWidth = 15
+    Columns("Y").ColumnWidth = 110
+    Columns("Z").ColumnWidth = 14
+    Lkai = Worksheets("Access対応").Cells(1, 2).Value
+    Zenbu = Worksheets("Access対応").Cells(2, 2).Value
+    
+    LkaiN = GetFilename(UBound(Split(Lkai, "\")), Lkai)
+    ZenbuN = GetFilename(UBound(Split(Zenbu, "\")), Zenbu)
+    
+    Workbooks.Open Lkai
+    Workbooks(LkaiN).Activate
+    
+    LstRow1 = Cells(Rows.count, 1).End(xlUp).row
+    LstColumn1 = Cells(1, Columns.count).End(xlToLeft).Column
+    
+    For j = 1 To LstRow1
+        MaruiNo(j) = Cells(j, 1).Value
+        For i = 1 To LstColumn1
+            MaruiNdata(j, i) = Cells(j, i)
+        Next
+    Next
+    
+    Workbooks(LkaiN).Save
+    Workbooks(LkaiN).Close
+        
+    Workbooks.Open Zenbu
+    Workbooks(ZenbuN).Activate
+    
+    LstRow2 = Cells(Rows.count, 1).End(xlUp).row
+    LstColumn2 = Cells(1, Columns.count).End(xlToLeft).Column
+    l = 1
+    
+    For j = 1 To LstRow2
+        For i = 1 To LstColumn2
+            Maruidata(j, i) = Cells(j, i)
+        Next
+    Next
+    
+    'Flag2で重複分を除いて表示している
+    Flag2 = False
+    For j = 1 To LstRow2
+        If InStr(Maruidata(j, 7), "NVI") <> 0 Then
+            For k = 1 To LstRow1
+                If Maruidata(j, 1) = MaruiNo(k) Then
+                    Flag2 = True
+                    Exit For
+                Else
+                    Flag2 = False
+                End If
+            Next
+            If Flag2 = False Then
+                MaruiNo1(0, l) = Cells(j, 1)
+                MaruiNo1(1, l) = Cells(j, 1).row
+                l = l + 1
+            End If
+            
+        End If
+    Next
+    '----------------------------------------------------
+    
+    For j = 1 To l + 1
+        For i = 1 To LstColumn2
+        
+            If j = 1 Then
+                ThisWorkbook.Sheets(sheetn).Cells(j, i) = Maruidata(1, i)
+            Else
+                ThisWorkbook.Sheets(sheetn).Cells(j, i) = Maruidata(MaruiNo1(1, j - 1), i)
+            End If
+            
+        Next
+    Next
+    k = 2
+    MARUIColumn = l - 1
+    For j = l + 1 To l + LstRow1
+        For i = 1 To LstColumn1
+            ThisWorkbook.Sheets(sheetn).Cells(j, i) = MaruiNdata(k, i)
+        Next
+        k = k + 1
+    Next
+    
+    ThisWorkbook.Sheets(sheetn).Activate
+    LstRow3 = Worksheets(sheetn).Cells(Rows.count, 1).End(xlUp).row
+    
+'    With ActiveSheet
+'
+'        .Sort.SortFields.Clear
+'
+'        .Sort.SortFields.Add _
+'            Key:=ActiveSheet.Cells(2, 1), _
+'            Order:=xlDescending
+'
+'        With .Sort
+'            .SetRange Range(Cells(2, 1), Cells(LstRow3, LstColumn1))
+'            .Header = xlNo
+'            .Orientation = xlTopToBottom
+'            .Apply
+'
+'        End With
+'
+'    End With
+    
+    For i = 2 To LstRow3 '号機のXXを消す
+        If InStr(Cells(i, 7).Value, "XX") <> 0 Then
+            Cells(i, 7) = Replace(Cells(i, 7).Value, "XX", "")
+        End If
+    Next
+    For i = 2 To LstRow3 'タイプを6文字にする
+        If Len(Cells(i, 8).Value) > 6 Then
+            Cells(i, 8) = Left(Cells(i, 8).Value, 6)
+        End If
+    Next
+    
+    Workbooks(ZenbuN).Save
+    Workbooks(ZenbuN).Close
+    
+'    Flag1 = False
+'    sj = 1
+'
+    '書き込み------------------------------------
+'    For j = 1 To LstRow2
+'        si = 1
+'        If Flag1 Then
+'            sj = sj + 1
+'        End If
+'
+'        If InStr(Maruidata(j, 7), "NVI") <> 0 Then
+'            Flag = True
+'            For k = 1 To LstRow1
+'                If Maruidata(j, 1) = MaruiNo(k) Then
+'                    Flag2 = True
+'                    Exit For
+'                Else
+'                    Flag2 = False
+'                End If
+'            Next
+'        Else
+'            Flag = False
+'        End If
+'
+'
+'        For i = 1 To LstColumn1
+'
+'            If Flag = True And j <> 1 Then
+'
+'                If Flag2 = False Then
+'                    ThisWorkbook.Sheets(sheetn).Cells(sj, si) = Maruidata(j, i)
+'                    si = si + 1
+'                    Flag1 = True
+'                End If
+'            Else
+'                Flag1 = False
+'            End If
+'
+'            If j = 1 Then
+'                ThisWorkbook.Sheets(sheetn).Cells(sj, si) = Maruidata(j, i)
+'                si = si + 1
+'                Flag1 = True
+'            End If
+'        Next
+'    Next
+    '-----------------------------------------
+    
+'    ThisWorkbook.Sheets(sheetn).Cells(sj, 1) = ""
+'    Flag1 = False
+'    sj = sj + 1
+'    For j = 1 To LstRow2
+'        si = 1
+'        If Flag1 Then
+'            sj = sj + 1
+'        End If
+'
+'        For i = 1 To LstColumn1
+'
+'            If Maruidata(j, 1) = MaruiNo(j) And j <> 1 Then
+'                ThisWorkbook.Sheets(sheetn).Cells(sj, si) = Maruidata(j, i)
+'                si = si + 1
+'                Flag1 = True
+'            Else
+'                Flag1 = False
+'            End If
+'
+'        Next
+'
+'    Next
+    
+    Call GenerateGraph
+End Sub
+
+
+Function GetFilename(ByVal Flag1, ByVal FullPath) As String
+
+    Dim i
+    Dim Flag2 As Long
+    
+    For i = 1 To 400
+        If Mid(FullPath, i, 1) = "\" Then
+            
+            Flag2 = Flag2 + 1 'フルパスのフォルダ間区切り\の出現回数カウント
+            
+            If Flag2 = Flag1 Then  '\の出現回数が最後になった時
+            
+                GetFilename = Mid(FullPath, i + 1)
+                Exit For
+                
+            End If
+            
+        End If
+        
+    Next
+    
+End Function
