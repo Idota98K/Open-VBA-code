@@ -1,0 +1,230 @@
+Option Explicit
+Dim Ryuudou1
+Dim Ryuudou2
+Dim Ryuudou1N
+Dim Ryuudou2N
+Dim LstRow
+Dim InspectorN(50)
+Dim RecipeN(400)
+Dim jj
+
+Sub sliceno()
+    Dim selfsheet
+    Dim i
+    Dim j
+    Dim k
+    Dim l
+    Dim col
+    Dim row
+    Dim Inspe
+    Dim Recip
+    Dim RealRecipeN(400)
+    Dim sort
+    Dim Slicenumber
+    Dim objectsheet
+    Dim LstRow2
+    Dim LstRow3
+    Dim LstColumn
+    Dim Lstcol3
+    Dim Guraphdata2
+    Dim Combdata(1, 600) '0は発生装置、1はTYPE
+    Dim Guraphdata
+    Set Guraphdata = ThisWorkbook.Worksheets(sheetn)
+    Set Guraphdata2 = ThisWorkbook.Worksheets("MARUIグラフ処理用")
+    Ryuudou1 = ThisWorkbook.Worksheets("Access対応").Cells(8, 2).Value
+    Ryuudou2 = ThisWorkbook.Worksheets("Access対応").Cells(9, 2).Value
+    Ryuudou1N = GetFilename(UBound(Split(Ryuudou1, "\")), Ryuudou1)
+    Ryuudou2N = GetFilename(UBound(Split(Ryuudou2, "\")), Ryuudou2)
+    
+    Set objectsheet = ThisWorkbook.Worksheets("MARUI流動モニター")
+    Dim number(1, 100)
+    Workbooks.Open Ryuudou2
+    Workbooks(Ryuudou2N).Activate
+    LstRow2 = Cells(Rows.count, 1).End(xlUp).row
+    LstColumn = Cells(LstRow2, Columns.count).End(xlToLeft).Column
+    Range(Cells(8, 1), Cells(LstRow2, LstColumn)).Copy
+    Workbooks.Open Ryuudou1
+    Workbooks(Ryuudou1N).Activate
+    LstRow = Cells(Rows.count, 1).End(xlUp).row
+    Cells(LstRow + 1, 1).PasteSpecial
+    LstRow = Cells(Rows.count, 1).End(xlUp).row
+    '装置IDのみ配列に入れる-----------------------------------------------------------------
+    j = 1
+    
+    With ActiveSheet
+
+        .sort.SortFields.Clear
+
+        .sort.SortFields.Add _
+            Key:=ActiveSheet.Cells(1, 1), _
+            Order:=xlDescending
+
+        With .sort
+            .SetRange Range(Cells(1, 1), Cells(LstRow, 3))
+            .Header = xlNo
+            .Orientation = xlTopToBottom
+            .Apply
+
+        End With
+
+    End With
+    
+    For i = 1 To LstRow
+        If TypeName(Cells(i, 1).Value) <> "Empty" Then
+            If InStr(Cells(i, 1).Value, "NVI") <> 0 Then
+                If Cells(i, 1).Value <> Cells(i - 1, 1).Value Then
+                    InspectorN(j) = Cells(i, 1).Value
+                    j = j + 1
+                End If
+            End If
+        End If
+    Next
+    Inspe = j - 1 '配列に入れた数
+    '-------------------------------------------------------------------------
+    
+  
+    
+    'デバイスIDのみ配列に入れる-----------------------------------------------
+    j = 1
+    With ActiveSheet
+
+        .sort.SortFields.Clear
+
+        .sort.SortFields.Add _
+            Key:=ActiveSheet.Cells(1, 3), _
+            Order:=xlDescending
+
+        With .sort
+            .SetRange Range(Cells(1, 1), Cells(LstRow, 3))
+            .Header = xlNo
+            .Orientation = xlTopToBottom
+            .Apply
+
+        End With
+
+    End With
+    
+    For i = 1 To LstRow
+        If TypeName(Cells(i, 3).Value) <> "Empty" Then
+            If InStr(Cells(i, 3).Value, "Device ID ") = 0 Then
+                If i = 1 Then
+                    RealRecipeN(j) = Cells(i, 3).Value
+                    j = j + 1
+                Else
+                    If Cells(i, 3).Value <> Cells(i - 1, 3).Value Then
+                        RealRecipeN(j) = Cells(i, 3).Value
+                        j = j + 1
+                    End If
+                End If
+                    
+            End If
+        End If
+    Next
+    Recip = j - 1
+    
+    sort = WorksheetFunction.sort(RealRecipeN, 1, -1, True) 'ソート
+    
+    
+    'データ吐き出し------------------------------------------------------------------------
+    Slicenumber = 0
+    k = 0
+    For j = 1 To Inspe
+        For i = 1 To Recip
+            Slicenumber = WorksheetFunction.CountIfs(Range("A:A"), InspectorN(j), Range("C:C"), RealRecipeN(i))
+            If Slicenumber <> 0 Then
+                k = k + 1
+                objectsheet.Cells(k, 3) = Slicenumber
+                
+                If InStr(RealRecipeN(i), "IMX") <> 0 Then 'IMX〇〇〇に統一
+                    objectsheet.Cells(k, 2) = Left(RealRecipeN(i), 6)
+                Else
+                    objectsheet.Cells(k, 2) = "IMX" + Left(RealRecipeN(i), 3)
+                End If
+                
+'               objectsheet.Cells(k, 2) = RealRecipeN(i)
+                
+                objectsheet.Cells(k, 1) = InspectorN(j)
+                
+            End If
+            Slicenumber = 0
+        Next
+        
+    Next
+    '-------------------------------------------------------------------------------------
+    
+    objectsheet.Activate
+    LstRow = Cells(Rows.count, 1).End(xlUp).row
+    For i = 1 To LstRow
+        k = 0
+        If WorksheetFunction.CountIfs(Range("A:A"), Cells(i, 1), Range("B:B"), Cells(i, 2)) = 1 Then
+            Cells(i, 4) = Cells(i, 1).Value
+            Cells(i, 5) = Cells(i, 2).Value
+            Cells(i, 6) = Cells(i, 3).Value
+            
+        Else
+            Cells(i, 4) = Cells(i, 1).Value
+            Cells(i, 5) = Cells(i, 2).Value
+            Cells(i, 6) = Cells(i, 3).Value
+            For j = i To 10 + i
+                If Cells(i, 2) = Cells(j + 1, 2).Value Then
+                    Cells(i, 6) = Cells(i, 6) + Cells(j + 1, 3).Value
+                    k = k + 1
+                Else
+                    Exit For
+                End If
+            
+            Next
+        End If
+        i = i + k
+    Next
+    
+    Workbooks(Ryuudou1N).Close
+    
+    Workbooks(Ryuudou2N).Close
+    
+    Guraphdata.Activate
+    LstRow = Cells(Rows.count, 1).End(xlUp).row
+    For i = 1 To LstRow
+        data1(i) = Guraphdata.Cells(i + 1, 7)
+        Combdata(0, i) = Guraphdata.Cells(i + 1, 7)
+        Combdata(1, i) = Guraphdata.Cells(i + 1, 8)
+    Next
+    
+    Guraphdata2.Activate
+    LstRow3 = Cells(Rows.count, 6).End(xlUp).row
+    Lstcol3 = Cells(61, Columns.count).End(xlToLeft).Column
+    
+    For i = 1 To LstRow
+        
+        If Not Range(Cells(61, 6), Cells(61, Lstcol3)).Find(objectsheet.Cells(i, 5), LookAt:=xlWhole) Is Nothing And Not Range(Cells(62, 6), Cells(LstRow3, 6)).Find(objectsheet.Cells(i, 4), LookAt:=xlWhole) Is Nothing Then
+            col = Range(Cells(61, 6), Cells(61, Lstcol3)).Find(objectsheet.Cells(i, 5), LookAt:=xlWhole).Column
+            row = Range(Cells(62, 6), Cells(LstRow3, 6)).Find(objectsheet.Cells(i, 4), LookAt:=xlWhole).row
+            Cells(row, col) = objectsheet.Cells(i, 6).Value
+        End If
+            
+    Next
+End Sub
+
+
+Function GetFilename(ByVal Flag1, ByVal FullPath) As String
+
+    Dim i
+    Dim Flag2 As Long
+    
+    For i = 1 To 400
+        If Mid(FullPath, i, 1) = "\" Then
+            
+            Flag2 = Flag2 + 1 'フルパスのフォルダ間区切り\の出現回数カウント
+            
+            If Flag2 = Flag1 Then  '\の出現回数が最後になった時
+            
+                GetFilename = Mid(FullPath, i + 1)
+                Exit For
+                
+            End If
+            
+        End If
+        
+    Next
+    
+End Function
