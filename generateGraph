@@ -1,3 +1,5 @@
+Option Explicit
+
 Sub GenerateGraph()
     Dim Guraphdata
     Dim Guraphdata2
@@ -55,12 +57,12 @@ Sub GenerateGraph()
            
     Next
     
-    Guraphdata2.Activate
-    For i = 1 To k - 1
-        Guraphdata2.Cells(i + 61, 6) = data2(i) '上がらないMARUI号機タイプ別の発生装置のみ
-    Next
-    
-    Range(Cells(62, 6), Cells(i + 61, 6)).sort Key1:=Cells(62, 6), Order1:=xlAscending, Orientation:=xlTopToBottom
+'    Guraphdata2.Activate
+'    For i = 1 To k - 1
+'        Guraphdata2.Cells(i + 61, 6) = data2(i) '上がらないMARUI号機タイプ別の発生装置のみ
+'    Next
+'
+'    Range(Cells(62, 6), Cells(i + 61, 6)).sort Key1:=Cells(62, 6), Order1:=xlAscending, Orientation:=xlTopToBottom
 
     k = 1
     For i = 1 To LstRow
@@ -87,10 +89,15 @@ Sub GenerateGraph()
     
     For i = 7 To kkk
         Guraphdata2.Cells(61, i) = typedata(i - 6)
+        Guraphdata2.Cells(84, i) = typedata(i - 6)
     Next
     
+    Guraphdata2.Activate
     Range(Cells(61, 7), Cells(61, i)).sort Key1:=Cells(61, 7), Order1:=xlAscending, Orientation:=xlLeftToRight
-
+    Range(Cells(84, 7), Cells(84, i)).sort Key1:=Cells(84, 7), Order1:=xlAscending, Orientation:=xlLeftToRight
+    
+    Range(Cells(85, 6), Cells(105, 7)).Copy
+    Cells(62, 6).PasteSpecial Paste:=xlPasteValues
     '--------------------------------------------------------
     
     
@@ -158,6 +165,7 @@ Sub GenerateGraph()
     End With
     
     Range(Cells(2, 6), Cells(k, 6)).sort Key1:=Cells(2, 6), Order1:=xlAscending, Orientation:=xlTopToBottom
+    
     '------------------------------------------------------------
     
     
@@ -188,6 +196,8 @@ Sub GenerateGraph()
     
     For i = 7 To kkk
         Guraphdata2.Cells(1, i) = typedata(i - 6)
+        Guraphdata2.Cells(61, i) = typedata(i - 6)
+        Guraphdata2.Cells(84, i) = typedata(i - 6)
     Next
     
     
@@ -227,6 +237,11 @@ Sub GenerateGraph()
 
     End With
     
+    Guraphdata2.Activate
+    Range(Cells(61, 7), Cells(61, i)).sort Key1:=Cells(61, 7), Order1:=xlAscending, Orientation:=xlLeftToRight
+    Range(Cells(84, 7), Cells(84, i)).sort Key1:=Cells(84, 7), Order1:=xlAscending, Orientation:=xlLeftToRight
+    
+    
     'kkは装置の行数、kkkはタイプの列数----------------------------------
     For k = 2 To kk + 1
         For i = 1 To MARUIColumn
@@ -243,8 +258,25 @@ Sub GenerateGraph()
         Next
             
     Next
-    '------------------------------------------------------------
+    '------------------------------------------------------------------
     
+    '上との違いは7から29号機の決まった号機のMARUI件数を出す------------
+    For k = 84 To 106
+        For i = 1 To MARUIColumn
+            If Combdata(0, i) = Cells(k, 6).Value Then
+                For j = 7 To kkk
+                    If Combdata(1, i) = Cells(1, j).Value Then
+                        Cells(k, j) = Cells(k, j) + 1
+                        Exit For
+                    End If
+                Next
+           
+            End If
+            
+        Next
+            
+    Next
+    '------------------------------------------------------------
     
     '上がったやつ(L解)-------------------------------------------
     
@@ -394,3 +426,4 @@ Sub GenerateGraph()
     '------------------------------------------------------------
     
 End Sub
+
