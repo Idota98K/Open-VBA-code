@@ -1,0 +1,321 @@
+Option Explicit
+
+
+Sub Rensyuu()
+    Application.ScreenUpdating = False
+
+    Dim ii As Long
+    Dim Get_Type As String
+    Dim Start_Date As Double
+    Dim End_Date As Double
+    Dim Graph_Col As Long
+    Dim Operation_Col As Long
+    Dim DataBase_Check As String
+    Dim End_Row As Long
+    Dim End_Col As Long
+    Dim Paste_Col As Long
+    Dim Initial_DataBase As String
+    Dim Paste_Row As Long
+    Dim sSQL As String
+    Dim Operation_End As Long
+    Dim Split_Ope As Variant
+    Dim RS As ADODB.Recordset
+    Dim Ope_End_Col As Long
+    Dim Label_Col As Variant
+    Dim Label_Col2 As Variant
+    Dim Graph_Start As Variant
+    Dim Graph_End As Variant
+    Dim LstCol As Long
+    Dim i As Long
+    
+    
+    On Error Resume Next
+    
+    '=== Type情報をSQL構文に入れる形で取得する ==='
+    Get_Type = Search_Type()
+    
+    With Sheets("生データ分析")
+        .Select
+        
+        '=== 定義関連 ==='
+        Start_Date = .Cells(1, 2).Value
+        End_Date = .Cells(2, 2).Value + 1
+
+        Operation_Col = 22
+        
+        '=== 取得する年によって、データベースが変わるので、ここで定義 ==='
+        Initial_DataBase = "" & Format(Start_Date, "YYYY")
+                
+        DataBase_Check = "Waiting"
+        If Year(Start_Date) = Year(End_Date) Then
+            DataBase_Check = "Only"
+        Else
+            DataBase_Check = "Plural"
+        End If
+        
+        '=== 非表示領域がある可能性があるので、全部表示する ==='
+        Columns.Hidden = False
+        
+        '=== 今あるデータをクリア ==='
+        End_Col = .Cells(20, Columns.Count).End(xlToLeft).Column
+        End_Row = .Cells(Rows.Count, 5).End(xlUp).Row
+        
+        If End_Col > Operation_Col Then
+            .Range(Cells(20, Operation_Col), Cells(20, End_Col)).ClearContents
+        End If
+        
+        If End_Row > 20 Then
+            If End_Col < 3 Then
+                End_Col = 3
+            End If
+            .Range(Cells(21, 3), Cells(End_Row, End_Col)).ClearContents
+        End If
+        
+        
+        '=== データ取得用のSQL作成 ==='
+        sSQL = "SELECT "
+        
+        Operation_End = .Cells(Rows.Count, 2).End(xlUp).Row
+        
+        
+        sSQL = sSQL & " FROM [ryoikibetsu]"
+        sSQL = sSQL & " WHERE " & Get_Type
+        sSQL = sSQL & " AND [Inspection_Time] >= " & Start_Date & " AND [Inspection_Time] <= " & End_Date
+        
+        '=== 検査機限定の場合 ==='
+        If .Cells(3, 2).Value <> "Total" Or .Cells(3, 2).Value = "" Then
+             sSQL = sSQL & " AND [Inspector] = '" & .Cells(3, 2).Value & "'"
+        End If
+       
+        
+        '=== 理収の指定がある場合 ==='
+        If .Cells(4, 2).Value <> 0 Or .Cells(4.2).Value <> "" Then
+            If .Cells(4, 3).Value = "以上" Then
+                sSQL = sSQL & " AND [Risyu] >= " & CLng(.Cells(4, 2).Value)
+            ElseIf .Cells(4, 3).Value = "限定" Then
+                sSQL = sSQL & " AND [Risyu] = " & CLng(.Cells(4, 2).Value)
+            End If
+        End If
+        
+        .Select
+        
+        '=== 並び順 ==='
+        sSQL = sSQL & " ORDER BY [Inspection_Time]"
+        
+        '=== DataBaseに接続 ==='
+        Err.Clear
+        
+        '=== データベースを開く。エラー出た場合は終了 ==='
+        If DataBase_Open(Initial_DataBase) = "False" Then
+            MsgBox "データベースに接続できませんでした。"
+            Set DB = Nothing
+            Exit Sub
+        End If
+        
+        Err.Clear
+        Set RS = New ADODB.Recordset
+        
+        RS.Open sSQL, DB, adOpenStatic, adLockReadOnly, adCmdText
+        
+        If Err.Number <> 0 Then
+            MsgBox "データベースのデータを取得できませんでした。"
+            DB.Close
+            Set RS = Nothing
+            Set DB = Nothing
+            Exit Sub
+        End If
+        
+        '=== データあれば、貼り付ける ==='
+        Paste_Row = .Cells(Rows.Count, 3).End(xlUp).Row + 1
+        If Paste_Row < 21 Then
+            Paste_Row = 21
+        End If
+        
+        If Not RS.BOF Then
+            .Cells(Paste_Row, 3).CopyFromRecordset RS
+        End If
+        
+        RS.Close
+        DB.Close
+        Set RS = Nothing
+        Set DB = Nothing
+        
+        '=== もしデータベースが2つに跨っていたら ==='
+        If DataBase_Check = "Plural" Then
+            Initial_DataBase = "GDR_" & Format(End_Date, "YYYY")
+            Err.Clear
+
+            '=== データベースを開く。エラー出た場合は終了 ==='
+            If DataBase_Open(Initial_DataBase) = "False" Then
+                MsgBox "データベースに接続できませんでした。"
+                Set DB = Nothing
+                Exit Sub
+            End If
+            
+            Err.Clear
+            Set RS = New ADODB.Recordset
+            
+            RS.Open sSQL, DB, adOpenStatic, adLockReadOnly, adCmdText
+            
+            If Err.Number <> 0 Then
+                MsgBox "データベースのデータを取得できませんでした。"
+                DB.Close
+                Set RS = Nothing
+                Set DB = Nothing
+                Exit Sub
+            End If
+            
+            '=== データあれば、貼り付ける ==='
+            Paste_Row = .Cells(Rows.Count, 3).End(xlUp).Row + 1
+            If Paste_Row < 21 Then
+                Paste_Row = 21
+            End If
+            
+            If Not RS.BOF Then
+                .Cells(Paste_Row, 3).CopyFromRecordset RS
+            End If
+            
+            RS.Close
+            DB.Close
+            Set RS = Nothing
+            Set DB = Nothing
+        End If
+        
+        '=== 書式を整える ==='
+        End_Row = .Cells(Rows.Count, 3).End(xlUp).Row
+        
+        If End_Row = 20 Then
+            MsgBox "更新データなし"
+            Exit Sub
+        End If
+        
+        .Range(Cells(21, 3), Cells(End_Row, 3)).NumberFormatLocal = "yyyy/mm/dd hh:mm:ss"
+        
+        Ope_End_Col = .Cells(20, Columns.Count).End(xlToLeft).Column
+        
+        For ii = Operation_Col To Ope_End_Col Step 2
+            .Range(Cells(21, ii), Cells(End_Row, ii)).NumberFormatLocal = "yyyy/mm/dd hh:mm:ss"
+        Next ii
+        
+        
+    End With
+    
+    With Sheets("MCT")
+        .Range("A:I").Clear
+        
+        Dim LotID As Object
+        Dim CISType As Object
+        Dim MachiN As Object
+        Dim A, AA, AAA, B, C, D, E, MCT, Slice, MCTTS, T, col, j, k, l
+        Set LotID = CreateObject("Scripting.Dictionary")
+        Set CISType = CreateObject("Scripting.Dictionary")
+        Set MachiN = CreateObject("Scripting.Dictionary")
+        
+        LstCol = Sheets("生データ分析").Cells(Rows.Count, 5).End(xlUp).Row
+        
+        For i = 21 To LstCol
+            LotID.Add Sheets("生データ分析").Cells(i, 6).Value, Sheets("生データ分析").Cells(i, 5).Value
+            CISType.Add Sheets("生データ分析").Cells(i, 5).Value, i
+            MachiN.Add Sheets("生データ分析").Cells(i, 4).Value, i
+            
+        Next
+        
+        B = LotID.Keys
+        C = LotID.Items
+        D = CISType.Keys
+        E = MachiN.Keys
+        
+        For i = 0 To UBound(B)
+            
+            A = Sheets("生データ分析").Range("F:F").Find(B(i), LookAt:=xlWhole).Row '上から検索
+            AA = Sheets("生データ分析").Range("F:F").Find(B(i), LookAt:=xlWhole, SearchDirection:=xlPrevious).Row '下から検索で出した時間で引き算し、重複回数で割るとMCTになる
+            AAA = Sheets("生データ分析").Range("F:F").FindPrevious(Sheets("生データ分析").Range("F:F").Find(B(i), LookAt:=xlWhole, SearchDirection:=xlPrevious)).Row
+            Slice = WorksheetFunction.CountIf(Sheets("生データ分析").Range("F:F"), B(i))
+            MCTTS = DateDiff("s", Sheets("生データ分析").Cells(A, 3).Value, Sheets("生データ分析").Cells(AA, 3).Value)
+            
+            If A = AA Then
+                '1SliceしかないときはSkip
+            Else
+    '            Debug.Print Round(MCT, 1) & " ; " & Slice & " ; " & i & " ; " & MCTTS
+                Debug.Print D(i)
+                Debug.Print E(i)
+                Slice = WorksheetFunction.CountIf(Sheets("生データ分析").Range("F:F"), B(i))
+                MCTTS = DateDiff("s", Sheets("生データ分析").Cells(A, 3).Value, Sheets("生データ分析").Cells(AA, 3).Value)
+                MCT = (DateDiff("s", Sheets("生データ分析").Cells(A, 3).Value, Sheets("生データ分析").Cells(AA, 3).Value)) / (Slice - 1)
+                
+                If MCT < Sheets("生データ分析").Cells(5, 2).Value Then
+                
+    '            If A = AAA Then
+    '                AAA = AA
+    '            End If
+                
+                    .Cells(i + 2, 1) = Sheets("生データ分析").Cells(A, 4).Value
+                    .Cells(i + 2, 2) = Sheets("生データ分析").Cells(A, 5).Value
+                    .Cells(i + 2, 3) = B(i)
+                    .Cells(i + 2, 4) = Round(MCT, 2)
+                    .Cells(i + 2, 5) = Month(Sheets("生データ分析").Cells(A, 3)) & "/" & Day(Sheets("生データ分析").Cells(A, 3))
+                    T = WorksheetFunction.CountIfs(.Range("A:A"), Sheets("生データ分析").Cells(A, 4).Value, .Range("C:C"), Sheets("生データ分析").Cells(A, 5).Value)
+                    
+                End If
+                
+            End If
+            
+        Next
+        
+        E = WorksheetFunction.Sort(E, 1, -1, True)
+        .Activate
+        .Range(Cells(1, 1), Cells(UBound(B) + 2, 5)).Sort Key1:=Range("A:A"), Order1:=xlDescending, Orientation:=1, Key2:=Range("B:B"), Order2:=xlAscending
+        col = 0
+        k = 0
+        
+        For i = 0 To UBound(E)
+            
+            .Cells(col + 1, 7) = E(i)
+            
+            For j = 0 To UBound(D)
+                
+                l = 0
+                For k = .Range("A:A").Find(E(i)).Row - 1 To .Cells(Rows.Count, 1).End(xlUp).Row
+'                    .Range("A:A").Find(E(i)).Row
+                    If E(i) = .Cells(k, 1) And D(j) = .Cells(k, 2) Then
+                        
+                        If k > .Range("A:A").Find(E(i), LookAt:=xlWhole, SearchDirection:=xlPrevious).Row Then
+                            
+                            Exit For
+                            
+                        End If
+                        
+                        l = l + 1
+                        If l = 1 Then 'Forで複数当てはまるときでも一回だけ吐き出して欲しいときのため
+                            col = col + 1
+                        End If
+                        
+                        .Cells(col, 8) = D(j)
+                        .Cells(col, 9) = .Cells(col, 9).Value + .Cells(k, 4).Value
+                            
+                    End If
+                    
+                Next
+
+                T = WorksheetFunction.CountIfs(.Range("A:A"), E(i), .Range("B:B"), D(j))
+                .Cells(col, 9) = .Cells(col, 9).Value / T
+                
+'                .Range(Cells(.Range("B:B").Find(D(j), LookAt:=xlWhole).Row, 2), Cells(.Range("B:B").Find(D(j), LookAt:=xlWhole, SearchDirection:=xlPrevious).Row, 2))
+'                Do
+'                    CC = Cells(k, 4)
+'                    If CC.Value Then
+'
+'                    End If
+'                    Set CC = .FindNext(CC)
+'                Loop While CC.Value Is D(j)
+            Next
+            
+        Next
+      
+    End With
+    MsgBox "Finish"
+    Application.ScreenUpdating = True
+    
+End Sub
+
+
