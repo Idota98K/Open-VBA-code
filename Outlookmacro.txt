@@ -1,4 +1,3 @@
-'機密に触れそうな部分は削除しています
 Option Explicit
 Dim rowcount As Long
 Dim sheetn
@@ -17,9 +16,9 @@ Sub GetCIS()
     Dim today As Date
     Dim strFilter As String
     Dim Filtercount As Long
-    Dim count(400) As Long
-    Dim ccc(100) As Long
-    Dim CIS(400)
+    Dim count(1000) As Long
+    Dim ccc(1000) As Long
+    Dim CIS(1000)
     Dim CIS1
     Dim CIS11
     Dim CIS2
@@ -29,12 +28,14 @@ Sub GetCIS()
     Dim ankenstart
     Dim ankenend
     Dim Ankenzyouhou
-
+    Dim LstRow
+    Dim LstCol2
+    
     Set Operater = ThisWorkbook.Worksheets("OutlookからMARUI")
     Worksheets.Add After:=Operater
     Set newsh = ActiveSheet
-    newsh.name = "CISMARUIモニター" & ThisWorkbook.Sheets.count - 1
-    sheetn = "CISMARUIモニター" & ThisWorkbook.Sheets.count - 1
+    newsh.name = "CISMARUIモニター" & ThisWorkbook.Sheets.count
+    sheetn = "CISMARUIモニター" & ThisWorkbook.Sheets.count
     
     Columns("A").ColumnWidth = 16
     Columns("C").ColumnWidth = 9
@@ -58,6 +59,14 @@ Sub GetCIS()
     Worksheets(sheetn).Cells(1, 4).Value = "対象装置"
     Worksheets(sheetn).Cells(1, 5).Value = "コメント"
     
+    
+    '↓この書き方でも時間指定できる
+'        If DateValue(maillist.Item(i).ReceivedTime) <= days Then
+'            If InStr(maillist.Item(i).Subject, "MARUI") Then
+'                Cells(i, 1).Value = maillist.Item(i).Subject
+'            End If
+'        End If
+
     If Worksheets("OutlookからMARUI").Cells(1, 2).Value = "受信トレイ" Then
     
         Set maillist = oNs.GetDefaultFolder(olFolderInbox).Items.Restrict(strFilter)
@@ -68,10 +77,10 @@ Sub GetCIS()
         For i = 1 To maillist.count
             If InStr(maillist.Item(i).Subject, "MARUI") <> 0 Then
                 If InStr(maillist.Item(i).Subject, "IMX") <> 0 Then
+                
                     count(Filtercount) = i
                     Filtercount = Filtercount + 1
                 End If
-                
             End If
         Next
         
@@ -102,7 +111,9 @@ Sub GetCIS()
             Next
             
         End If
+        
     Else
+    
         For j = 1 To oF.count
             If oF(j) = Worksheets("OutlookからMARUI").Cells(1, 2).Value Then
             
@@ -114,8 +125,11 @@ Sub GetCIS()
                 For i = 1 To maillist.count
                     If InStr(maillist.Item(i).Subject, "MARUI") <> 0 Then
                         If InStr(maillist.Item(i).Subject, "IMX") <> 0 Then
+'                            If InStr(maillist.Item(i).Subject, "RE:") = 0 Then
+'                            End If
                             count(Filtercount) = i
                             Filtercount = Filtercount + 1
+                            
                         End If
                         
                     End If
@@ -260,297 +274,335 @@ Sub GetCIS()
         
     End With
     Range("A:D").HorizontalAlignment = xlCenter
-'↓この書き方でも時間指定できる
-'        If DateValue(maillist.Item(i).ReceivedTime) <= days Then
-'            If InStr(maillist.Item(i).Subject, "MARUI") Then
-'                Cells(i, 1).Value = maillist.Item(i).Subject
-'            End If
-'        End If
-
-   
-End Sub
-
-Sub GetVos()
-    Dim bangou%
-    Dim Operater As Worksheet
-    Dim newsh As Worksheet
-    Dim oApp As New Outlook.Application
-    Dim oNs As Outlook.Namespace
-    Dim maillist As Items
-    Dim days
-    Dim oF As Folders
-    Dim oF2 As Folder
-    Dim i As Long, j As Long, k As Long, l As Long
-    Dim today As Date
-    Dim strFilter As String
-    Dim FiltercountV As Long
-    Dim countV(1000) As Long
-    Dim ccc(100) As Long
-    Dim Vos(600)
-    Dim Vos1
-    Dim Vos11
-    Dim Vos2
-    Dim Vos22
-    Dim Subjectnumber
-    Dim LstRow1
-    Dim ankenstart
-    Dim ankenend
-    Dim Ankenzyouhou
     
-    Set Operater = ThisWorkbook.Worksheets("Sheet1")
-    Worksheets.Add After:=Operater
-    Set newsh = ActiveSheet
-    newsh.name = "VosMARUIモニター" & ThisWorkbook.Sheets.count - 1
-    sheetn = "VosMARUIモニター" & ThisWorkbook.Sheets.count - 1
+    Worksheets(sheetn).Activate
     
-    Columns("A").ColumnWidth = 16
-    Columns("C").ColumnWidth = 9
-    Columns("D").ColumnWidth = 11
-    Columns("R").ColumnWidth = 13
-    Columns("S").ColumnWidth = 254.9
-    Set oNs = oApp.GetNamespace("MAPI")
-    Set oF = oNs.GetDefaultFolder(olFolderInbox).Folders
-    Set oF2 = oNs.GetDefaultFolder(olFolderInbox).Folders(Worksheets("Sheet1").Cells(2, 2).Value)
-    today = Date
-    days = DateAdd("d", -1 * (Worksheets("Sheet1").Cells(7, 2).Value), Date)
     
-    strFilter = "[受信日時] <= '" & now & _
-                 "' AND [受信日時] >= '" & days & " 23:59'"
-    k = 1
-    FiltercountV = 1
+    '正規化-------------------------------------------------
+    LstRow = Cells(Rows.count, 1).End(xlUp).row
+    Dim a
+    Dim b
+    Dim m As Long
+    Dim bb() As Variant
     
-    Worksheets(sheetn).Cells(1, 1).Value = "日時"
-    Worksheets(sheetn).Cells(1, 2).Value = "タイプ"
-    Worksheets(sheetn).Cells(1, 3).Value = "対象工程"
-    Worksheets(sheetn).Cells(1, 4).Value = "対象装置"
-    Worksheets(sheetn).Cells(1, 5).Value = "コメント"
-    
-    If Worksheets("Sheet1").Cells(1, 2).Value = "受信トレイ" Then
-    
-        Set maillist = oNs.GetDefaultFolder(olFolderInbox).Items.Restrict(strFilter)
-        maillist.sort "[ReceivedTime]", True
-        Vos(k) = FiltercountV
-        
-        For i = 1 To maillist.count
-            If InStr(maillist.Item(i).Subject, "MARUI") <> 0 Then
-                If InStr(maillist.Item(i).Subject, "CXN") <> 0 Then
-                    countV(FiltercountV) = i
-                    FiltercountV = FiltercountV + 1
-                End If
-                
-            End If
-        Next
-        
-        If Vos(k) <> 1 Or FiltercountV <> 1 Then
-        
-            For i = Vos(k) To FiltercountV - 1
-            
-                Subjectnumber = InStr(maillist.Item(countV(i)).Subject, "CXN")
-                Vos1 = Split(maillist.Item(countV(i)).Body, vbLf)
-                ankenstart = InStr(maillist.Item(countV(i)).Body, "■案件情報")
-                ankenend = InStr(maillist.Item(countV(i)).Body, "■配布先")
-                Ankenzyouhou = Mid(maillist.Item(countV(i)).Body, ankenstart, ankenend - ankenstart)
-                Vos11 = Split(Ankenzyouhou, vbLf)
-                Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(countV(i)).Subject, Subjectnumber, 7)
-                Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(countV(i)).ReceivedTime
-                
-                For l = 0 To UBound(Vos1)
-                
-                    If InStr(Vos1(l), "対象工程") <> 0 Then
-                        Worksheets(sheetn).Cells(i + 1, 3).Value = Mid(Vos1(l), InStr(Vos1(l), "：") + 1)
-                    End If
-                    
-                    If InStr(Vos1(l), "対象装置") <> 0 Then
-                        Worksheets(sheetn).Cells(i + 1, 4).Value = Mid(Vos1(l), InStr(Vos1(l), "：") + 1)
-                    End If
-                    
-                    If InStr(Vos1(l), "コメント") <> 0 Then
-                        Worksheets(sheetn).Cells(i + 1, 5).Value = Vos1(l + 1)
-                    End If
-                    
-                Next
-                
-            Next
-            
+    Set a = CreateObject("Scripting.Dictionary")
+    b = Range(Cells(2, 3), Cells(LstRow, 3))
+    j = 1
+    For i = 1 To UBound(b, 1)
+        j = j + 1
+        '登録されていない場合
+        If a.Exists(b(i, 1)) = False Then
+            a.Add b(i, 1), 0 '辞書に登録する
+        Else
+            Rows(j).Delete
+            j = j - 1
         End If
+        
+    Next
     
-    Else
+    j = 0
     
-        For j = 1 To oF.count
-            If oF(j) = Worksheets("Sheet1").Cells(1, 2).Value Then
+    For i = 2 To LstRow '号機のXXを消す
+        If InStr(Cells(i, 8).Value, "XX") <> 0 Then
+            Cells(i, 8) = Replace(Cells(i, 8).Value, "XX", "")
+        End If
+        If Len(Cells(i, 8).Value) = 1 Then
+            Cells(i, 8) = Cells(i, 7)
+        End If
+        
+        If InStr(StrConv(Cells(i, 19).Value, vbNarrow), "L解_権藤") > 0 Or Cells(i, 2).Value = "IMX803" And InStr(Cells(i, 19).Value, "REV") > 0 Then
+            If TypeName(Cells(i, 19).Value) <> "Empty" Then
+                Rows(i).Delete
+                i = i - 1
+            End If
+        End If
+    Next
+    
+    LstRow = Cells(Rows.count, 1).End(xlUp).row
+    Dim c As New Dictionary
+    Dim d As New Dictionary
+    Dim dd()  '生産Type名格納用
+    Dim ddd() '試作Type名格納用
+    Dim n
+    Dim E As New Dictionary
+    Dim F As New Dictionary
+    Dim FF()  '生産MachineNo格納用
+    Dim FFF() '試作MachineNo格納用
+    Dim TypeCol
+    Dim MacNoCol 'MachineNoColumn
+    Dim TypeCol2
+    Dim MacNoCol2
+    Dim LstCol
+    Dim LstCol3
+    Dim LstCol4
+    
+    m = 1
+    n = 1
+    ReDim dd(1 To 2000)
+    ReDim FF(1 To 2000)
+    ReDim ddd(1 To 2000)
+    ReDim FFF(1 To 2000)
+    
+    For i = 2 To LstRow '試作を除いてType名を動的配列に格納
+        If Mid(Cells(i, 5).Value, 5, 1) <> "T" And Mid(Cells(i, 5).Value, 5, 1) <> "X" And Mid(Cells(i, 5).Value, 5, 1) <> "W" Then
+            dd(m) = Cells(i, 2)
+            FF(m) = Cells(i, 8)
+            m = m + 1
+        Else   '試作時のType名とMachineNoの格納
+            ddd(n) = Cells(i, 2)
+            FFF(n) = Cells(i, 8)
+            n = n + 1
+        End If
+    Next
+    
+    ReDim Preserve dd(1 To m - 1)
+    ReDim Preserve FF(1 To m - 1)
+    ReDim Preserve ddd(1 To n - 1)
+    ReDim Preserve FFF(1 To n - 1)
+    
+'    d = Range(Cells(2, 2), Cells(LstRow, 2))
+'    F = Range(Cells(2, 8), Cells(LstRow, 8))
+    
+    j = 1
+    For i = 1 To UBound(dd, 1)
+        j = j + 1
+        '登録されていない場合
+        If c.Exists(dd(i)) = False Then
+            c.Add dd(i), 0 '辞書に登録する
+        End If
+        If E.Exists(FF(i)) = False Then
+            E.Add FF(i), 0 '辞書に登録する
+        End If
+    Next
+    
+    For i = 1 To UBound(ddd, 1)
+        j = j + 1
+        '登録されていない場合
+        If d.Exists(ddd(i)) = False Then
+            d.Add ddd(i), 0 '辞書に登録する
+        End If
+        If F.Exists(FFF(i)) = False Then
+            F.Add FFF(i), 0 '辞書に登録する
+        End If
+    Next
+    
+    ThisWorkbook.Worksheets("OutlookからMARUI").Activate
+    
+    Range("D9:DG62").SpecialCells(xlCellTypeConstants).ClearContents '右端範囲は適当
+    
+    For i = 0 To c.count - 1
+        Worksheets("OutlookからMARUI").Cells(9, i + 4) = c.Keys(i)
+        
+    Next
+    For i = 0 To E.count - 1
+        Worksheets("OutlookからMARUI").Cells(22, i + 4) = E.Keys(i)
+    Next
+    For i = 0 To d.count - 1
+        Worksheets("OutlookからMARUI").Cells(37, i + 4) = d.Keys(i)
+        
+    Next
+    For i = 0 To F.count - 1
+        Worksheets("OutlookからMARUI").Cells(50, i + 4) = F.Keys(i)
+    Next
+    
+    LstCol = Worksheets("OutlookからMARUI").Cells(9, Columns.count).End(xlToLeft).Column
+    Range(Cells(9, 4), Cells(9, LstCol)).sort Key1:=Cells(9, 4), order1:=xlAscending, Orientation:=xlLeftToRight
+    
+    LstCol2 = Worksheets("OutlookからMARUI").Cells(22, Columns.count).End(xlToLeft).Column
+    Range(Cells(22, 4), Cells(22, LstCol)).sort Key1:=Cells(22, 4), order1:=xlAscending, Orientation:=xlLeftToRight
+    
+    LstCol3 = Worksheets("OutlookからMARUI").Cells(37, Columns.count).End(xlToLeft).Column
+    Range(Cells(37, 4), Cells(37, LstCol)).sort Key1:=Cells(37, 4), order1:=xlAscending, Orientation:=xlLeftToRight
+    
+    LstCol4 = Worksheets("OutlookからMARUI").Cells(50, Columns.count).End(xlToLeft).Column
+    Range(Cells(50, 4), Cells(50, LstCol)).sort Key1:=Cells(50, 4), order1:=xlAscending, Orientation:=xlLeftToRight
+    '--------------------------------------------------------
+
+
+    For i = 1 To 12
+    
+        For j = 2 To UBound(dd, 1) + UBound(ddd, 1) + 1
+            If Month(Worksheets(sheetn).Cells(j, 1)) = Worksheets("OutlookからMARUI").Cells(i + 9, 3).Value Then '発生月が一致した時
             
-                Set maillist = oF(j).Items.Restrict(strFilter)
-                maillist.sort "[ReceivedTime]", True
-                Vos(k) = FiltercountV
-                
-                For i = 1 To maillist.count
-                    If InStr(maillist.Item(i).Subject, "MARUI") <> 0 Then
-                        If InStr(maillist.Item(i).Subject, "CXN") <> 0 Then
-                            countV(FiltercountV) = i
-                            FiltercountV = FiltercountV + 1
-                        End If
-                        
-                    End If
-                Next
-                If Vos(k) <> 1 Or FiltercountV <> 1 Then
-                    For i = Vos(k) To FiltercountV - 1
+                If Mid(Worksheets(sheetn).Cells(j, 5).Value, 5, 1) <> "T" _
+                And Mid(Worksheets(sheetn).Cells(j, 5).Value, 5, 1) <> "W" And Mid(Worksheets(sheetn).Cells(j, 5).Value, 5, 1) <> "X" Then '試作じゃないLotIDの時
+                    TypeCol = Worksheets("OutlookからMARUI").Range(Cells(9, 4), Cells(9, LstCol)).Find(Worksheets(sheetn).Cells(j, 2)).Column
+                    Worksheets("OutlookからMARUI").Cells(i + 9, TypeCol) = Worksheets("OutlookからMARUI").Cells(i + 9, TypeCol) + 1
                     
-                        Subjectnumber = InStr(maillist.Item(countV(i)).Subject, "CXN")
-                        Vos1 = Split(maillist.Item(countV(i)).Body, vbLf)
-                        ankenstart = InStr(maillist.Item(countV(i)).Body, "■案件情報")
-                        ankenend = InStr(maillist.Item(countV(i)).Body, "■配布先")
-                        Ankenzyouhou = Mid(maillist.Item(countV(i)).Body, ankenstart, ankenend - ankenstart)
-                        Vos11 = Split(Ankenzyouhou, vbLf)
-                        Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(countV(i)).Subject, Subjectnumber, 7)
-                        Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(countV(i)).ReceivedTime
-                        rowcount = 3
-                        
-                        For l = 0 To UBound(Vos1)
-                            
-                            If InStr(Vos1(l), "コメント") <> 0 Then
-                                Worksheets(sheetn).Cells(i + 1, 19).Value = Vos1(l + 1)
-                            End If
-                        Next
-                        
-                        For l = 0 To UBound(Vos11)
-                            
-                            Call commentout(i, Vos11(l), rowcount, "案件No")
-                            Call commentout(i, Vos11(l), rowcount, "件名")
-                            Call commentout(i, Vos11(l), rowcount, "ロットNo")
-                            Call commentout(i, Vos11(l), rowcount, "マークロット")
-                            Call commentout(i, Vos11(l), rowcount, "対象工程")
-                            Call commentout(i, Vos11(l), rowcount, "対象装置")
-                            Call commentout(i, Vos11(l), rowcount, "優先度")
-                            Call commentout(i, Vos11(l), rowcount, "作業数")
-                            Call commentout(i, Vos11(l), rowcount, "発生数")
-                            Call commentout(i, Vos11(l), rowcount, "不良率")
-                            Call commentout(i, Vos11(l), rowcount, "不適合項目")
-                            Call commentout(i, Vos11(l), rowcount, "原因分類1")
-                            Call commentout(i, Vos11(l), rowcount, "原因分類2")
-                            Call commentout(i, Vos11(l), rowcount, "不良分類1")
-                            Call commentout(i, Vos11(l), rowcount, "不良分類2")
-                            Call commentout(i, Vos11(l), rowcount, "対象ロット")
-                            
-                        Next
-                        
-                    Next
+                    MacNoCol = Worksheets("OutlookからMARUI").Range(Cells(22, 4), Cells(22, LstCol2)).Find(Worksheets(sheetn).Cells(j, 8)).Column
+                    Worksheets("OutlookからMARUI").Cells(i + 22, MacNoCol) = Worksheets("OutlookからMARUI").Cells(i + 22, MacNoCol) + 1
+                Else
+                    TypeCol2 = Worksheets("OutlookからMARUI").Range(Cells(37, 4), Cells(37, LstCol3)).Find(Worksheets(sheetn).Cells(j, 2)).Column
+                    Worksheets("OutlookからMARUI").Cells(i + 37, TypeCol2) = Worksheets("OutlookからMARUI").Cells(i + 37, TypeCol2) + 1
                     
+                    MacNoCol2 = Worksheets("OutlookからMARUI").Range(Cells(50, 4), Cells(50, LstCol4)).Find(Worksheets(sheetn).Cells(j, 8)).Column
+                    Worksheets("OutlookからMARUI").Cells(i + 50, MacNoCol2) = Worksheets("OutlookからMARUI").Cells(i + 50, MacNoCol2) + 1
                 End If
-                
-                k = k + 1
-                
-            ElseIf oF(j) = Worksheets("Sheet1").Cells(2, 2).Value Then
-    
-                Set maillist = oF(j).Items.Restrict(strFilter)
-                maillist.sort "[ReceivedTime]", True
-                Vos(k) = FiltercountV
-                
-                For i = 1 To maillist.count
-                
-                    If InStr(maillist.Item(i).Subject, "MARUI") <> 0 Then
-                    
-                        If InStr(maillist.Item(i).Subject, "CXN") <> 0 Then
-                           
-                            countV(FiltercountV) = i
-                            FiltercountV = FiltercountV + 1
-                            
-                        End If
-                        
-                    End If
-                    
-                Next
-                
-                If Vos(k) <> 1 Or FiltercountV <> 1 Then
-                
-                    For i = Vos(k) To FiltercountV - 1
-                    
-                        Subjectnumber = InStr(maillist.Item(countV(i)).Subject, "CXN")
-                        Vos2 = Split(maillist.Item(countV(i)).Body, vbLf)
-                        ankenstart = InStr(maillist.Item(countV(i)).Body, "■案件情報")
-                        ankenend = InStr(maillist.Item(countV(i)).Body, "■配布先")
-                        Ankenzyouhou = Mid(maillist.Item(countV(i)).Body, ankenstart, ankenend - ankenstart)
-                        Vos22 = Split(Ankenzyouhou, vbLf)
-                        Worksheets(sheetn).Cells(i + 1, 2).Value = Mid(maillist.Item(countV(i)).Subject, Subjectnumber, 7)
-                        Worksheets(sheetn).Cells(i + 1, 1).Value = maillist.Item(countV(i)).ReceivedTime
-                        rowcount = 3
-                        
-                        For l = 0 To UBound(Vos2)
-                            
-                            If InStr(Vos2(l), "コメント") <> 0 Then
-                                Worksheets(sheetn).Cells(i + 1, 19).Value = Vos2(l + 1)
-                            End If
-                        Next
-                        
-                        For l = 0 To UBound(Vos22)
-                            
-                            Call commentout(i, Vos22(l), rowcount, "案件No")
-                            Call commentout(i, Vos22(l), rowcount, "件名")
-                            Call commentout(i, Vos22(l), rowcount, "ロットNo")
-                            Call commentout(i, Vos22(l), rowcount, "マークロット")
-                            Call commentout(i, Vos22(l), rowcount, "対象工程")
-                            Call commentout(i, Vos22(l), rowcount, "対象装置")
-                            Call commentout(i, Vos22(l), rowcount, "優先度")
-                            Call commentout(i, Vos22(l), rowcount, "作業数")
-                            Call commentout(i, Vos22(l), rowcount, "発生数")
-                            Call commentout(i, Vos22(l), rowcount, "不良率")
-                            Call commentout(i, Vos22(l), rowcount, "不適合項目")
-                            Call commentout(i, Vos22(l), rowcount, "原因分類1")
-                            Call commentout(i, Vos22(l), rowcount, "原因分類2")
-                            Call commentout(i, Vos22(l), rowcount, "不良分類1")
-                            Call commentout(i, Vos22(l), rowcount, "不良分類2")
-                            Call commentout(i, Vos22(l), rowcount, "対象ロット")
-                            
-                        Next
-                        
-                    Next
-                    
-                End If
-                
-                k = k + 1
                 
             End If
-            
-        Next
-        
-    End If
-    
-    LstRow1 = Worksheets(sheetn).Cells(Rows.count, 1).End(xlUp).row
-    
-    With ActiveSheet
-    
-        .sort.SortFields.Clear
-        
-        .sort.SortFields.Add _
-            Key:=ActiveSheet.Cells(2, 1), _
-            Order:=xlDescending
-        
-        With .sort
-            .SetRange Range(Cells(2, 1), Cells(LstRow1, 19))
-            .Header = xlNo
-            .Orientation = xlTopToBottom
-            .Apply
-            
-        End With
-        
-    End With
-    Range("A:D").HorizontalAlignment = xlCenter
-'↓この書き方でも時間指定できる
-'        If DateValue(maillist.Item(i).ReceivedTime) <= days Then
-'            If InStr(maillist.Item(i).Subject, "MARUI") Then
-'                Cells(i, 1).Value = maillist.Item(i).Subject
+            '先にTypeとMachineNoを出すプログラム追加
+'            If Month(Worksheets(sheetn).Cells(j, 1)) = Worksheets("OutlookからMARUI").Cells(i + 9, 3).Value And Mid(Worksheets(sheetn).Cells(j, 5).Value, 5, 1) = "T" _
+'            Or Mid(Worksheets(sheetn).Cells(j, 5).Value, 5, 1) = "W" Or Mid(Worksheets(sheetn).Cells(j, 5).Value, 5, 1) = "X" Then '発生月が一致した時かつ試作じゃないLotIDの時
+'
+'                TypeCol = Worksheets("OutlookからMARUI").Range(Cells(37, 4), Cells(37, LstCol)).Find(Worksheets(sheetn).Cells(j, 2)).Column
+'                Worksheets("OutlookからMARUI").Cells(i + 37, TypeCol) = Worksheets("OutlookからMARUI").Cells(i + 9, TypeCol) + 1
+'
+'                MacNoCol = Worksheets("OutlookからMARUI").Range(Cells(50, 4), Cells(50, LstCol2)).Find(Worksheets(sheetn).Cells(j, 8)).Column
+'                Worksheets("OutlookからMARUI").Cells(i + 50, MacNoCol) = Worksheets("OutlookからMARUI").Cells(i + 22, MacNoCol) + 1
+'
 '            End If
-'        End If
+        Next
     
-
-   
+    Next
+    
+    Call test
+    
 End Sub
 
 Sub commentout(ByVal i As Long, ByVal j As String, R As Long, ByVal mozi As String)
     
     If InStr(j, mozi) <> 0 Then
-        Worksheets(sheetn).Cells(i + 1, R).Value = Mid(j, InStr(j, "：") + 1)
+        Worksheets(sheetn).Cells(i + 1, R).Value = Mid(j, InStr(j, "：") + 2)
         R = R + 1
     End If
+    
+End Sub
+
+Sub test()
+    Dim yester
+    Dim weekago
+    Dim i, j, k, l
+    Dim Flag
+    Dim tcol, bcol
+    Dim ty As New Dictionary '生産TypeName
+    Dim mn As New Dictionary '生産MachineNo
+    Dim ty2 As New Dictionary '試作TypeName
+    Dim mn2 As New Dictionary '試作MachineNo
+    Dim tyy()
+    Dim mnn()
+    Dim tyy2()
+    Dim mnn2()
+    Dim tes
+    Dim tgr, tgc
+    Dim tgr2, tgc2
+    Dim LstRow
+    yester = DateAdd("d", -1, Date)
+    weekago = DateAdd("d", -7, Date)
+    
+    With ThisWorkbook.Sheets(sheetn)
+        bcol = 2
+        For i = 2 To .Cells(Rows.count, 1).End(xlUp).row
+            If .Cells(i, 1).Value < Date Then
+                Exit For
+            Else
+                bcol = i + 1
+            End If
+        Next
+        
+        tcol = bcol - 1
+        For i = bcol To .Cells(Rows.count, 1).End(xlUp).row
+            If .Cells(i, 1).Value > weekago Then
+                
+                tcol = tcol + 1
+                Flag = 0
+                
+            Else
+                Exit For
+            End If
+        Next
+        
+'        tyy = .Range(.Cells(bcol, 2), .Cells(tcol, 2))
+'        mnn = .Range(.Cells(bcol, 8), .Cells(tcol, 8))
+        ReDim tyy(1 To 1000)
+        ReDim mnn(1 To 1000)
+        ReDim tyy2(1 To 1000)
+        ReDim mnn2(1 To 1000)
+        
+        k = 1
+        l = 1
+        For i = bcol To tcol
+            If Mid(.Cells(i, 5).Value, 5, 1) <> "T" And Mid(.Cells(i, 5).Value, 5, 1) <> "X" And Mid(.Cells(i, 5).Value, 5, 1) <> "W" Then
+                tyy(k) = .Cells(i, 2)
+                mnn(k) = .Cells(i, 8)
+                k = k + 1
+            Else   '試作時のType名とMachineNoの格納
+                tyy2(l) = .Cells(i, 2)
+                mnn2(l) = .Cells(i, 8)
+                l = l + 1
+            End If
+        Next
+        
+        ReDim Preserve tyy(1 To k - 1)
+        ReDim Preserve mnn(1 To k - 1)
+        ReDim Preserve tyy2(1 To l - 1)
+        ReDim Preserve mnn2(1 To l - 1)
+    
+        For i = 1 To UBound(tyy)
+            If ty.Exists(tyy(i)) = False Then
+                ty.Add tyy(i), 0
+            End If
+            
+            If mn.Exists(mnn(i)) = False Then
+                mn.Add mnn(i), 0
+            End If
+        Next
+        
+        For i = 1 To UBound(tyy2)
+            If ty2.Exists(tyy2(i)) = False Then
+                ty2.Add tyy2(i), 0
+            End If
+            
+            If mn2.Exists(mnn2(i)) = False Then
+                mn2.Add mnn2(i), 0
+            End If
+        Next
+        
+    End With
+    
+    With ThisWorkbook.Worksheets("MARUIグラフ処理用")
+    
+'        .Range(.Cells(36, 6), .Cells(60, 23)).SpecialCells(xlCellTypeConstants).ClearContents
+    
+        For i = 0 To mn.count - 1
+            .Cells(i + 37, 6) = mn.Keys(i)
+        Next
+        
+        For i = 0 To ty.count - 1
+            .Cells(36, 7 + i) = ty.Keys(i)
+        Next
+        
+        For i = 0 To mn2.count - 1
+            .Cells(i + 37, 25) = mn2.Keys(i)
+        Next
+        
+        For i = 0 To ty2.count - 1
+            .Cells(36, 26 + i) = ty2.Keys(i)
+        Next
+        
+        ThisWorkbook.Worksheets("MARUIグラフ処理用").Activate
+        .Range(.Cells(37, 6), .Cells(37 + mn.count, 6)).sort Key1:=.Cells(37, 6), order1:=xlAscending, Orientation:=xlTopToBottom
+        .Range(.Cells(36, 7), .Cells(36, 7 + mn.count)).sort Key1:=.Cells(36, 7), order1:=xlAscending, Orientation:=xlLeftToRight
+        .Range(.Cells(37, 25), .Cells(37 + mn2.count, 25)).sort Key1:=.Cells(37, 25), order1:=xlAscending, Orientation:=xlTopToBottom
+        .Range(.Cells(36, 26), .Cells(36, 25 + mn2.count)).sort Key1:=.Cells(36, 26), order1:=xlAscending, Orientation:=xlLeftToRight
+        
+        For i = bcol To tcol
+            If Mid(Worksheets(sheetn).Cells(i, 5).Value, 5, 1) <> "T" And Mid(Worksheets(sheetn).Cells(i, 5).Value, 5, 1) <> "W" _
+            And Mid(Worksheets(sheetn).Cells(i, 5).Value, 5, 1) <> "X" Then  'ifで分岐してあげないとないものを代入になってエラーでる
+            
+                tgc = .Range(.Cells(37, 6), .Cells(37 + mn.count, 6)).Find(Worksheets(sheetn).Cells(i, 8)).row
+                tgr = .Range(.Cells(36, 7), .Cells(36, 7 + ty.count)).Find(Worksheets(sheetn).Cells(i, 2)).Column
+                .Cells(tgc, tgr) = .Cells(tgc, tgr).Value + 1
+                
+            Else
+                tgc2 = .Range(.Cells(37, 25), .Cells(37 + mn2.count, 25)).Find(Worksheets(sheetn).Cells(i, 8)).row
+                tgr2 = .Range(.Cells(36, 26), .Cells(36, 26 + ty2.count)).Find(Worksheets(sheetn).Cells(i, 2)).Column
+                .Cells(tgc2, tgr2) = .Cells(tgc2, tgr2).Value + 1
+                
+            End If
+        Next
+        
+    End With
+    
     
 End Sub
 
